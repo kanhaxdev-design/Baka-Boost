@@ -271,16 +271,11 @@ export default function App() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
-      if (session?.user) {
-        const { data: profile } = await supabase.from("profiles").select("role").eq("id", session.user.id).maybeSingle<{ role: ProfileView }>();
-        if (profile?.role) setProfileView(profile.role);
-        else setSetupRole("choose");
-      }
       setAuthChecking(false);
     };
     void checkSession();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user && !authMode && !profileView && !setupRole) setSetupRole("choose");
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session?.user && !authMode && !profileView && !setupRole) setSetupRole("choose");
     });
     return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, []);
