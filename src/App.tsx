@@ -160,7 +160,7 @@ function BlogPage({ onBack }: { onBack: () => void }) {
   return <main className="utility-page blog-page"><div className="utility-nav"><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button><button className="utility-back" onClick={onBack}>Back to home <span>↗</span></button></div><div className="blog-shell"><header className="blog-heading"><span className="section-label">The BakaBoost journal</span><h1>Little stories, <em>big feelings.</em></h1><p>Notes on creativity, community, and the joy of showing up for someone.</p></header><article className="blog-feature"><img src={stories[0].image} alt="A creator surrounded by thoughtful gifts" /><div><span className="blog-tag">{stories[0].tag}</span><h2>{stories[0].title}</h2><p>{stories[0].text}</p><button className="pink-btn" onClick={() => window.scrollTo({ top: 520, behavior: "smooth" })}>Read the story <span>→</span></button></div></article><div className="blog-grid">{stories.slice(1).map(story => <article className="blog-card" key={story.title}><img src={story.image} alt="" /><div><span className="blog-tag">{story.tag}</span><h2>{story.title}</h2><p>{story.text}</p><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Read more <span>→</span></button></div></article>)}</div></div></main>;
 }
 
-function ExplorePage({ liked, onToggleLike, onAddToCart, onBack }: { liked: Set<number>; onToggleLike: (id: number) => void; onAddToCart: (gift: typeof GIFTS[number]) => void; onBack: () => void }) {
+function ExplorePage({ liked, cartCount, onToggleLike, onAddToCart, onOpenCart, onBack }: { liked: Set<number>; cartCount: number; onToggleLike: (id: number) => void; onAddToCart: (gift: typeof GIFTS[number]) => void; onOpenCart: () => void; onBack: () => void }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All gifts");
   const [price, setPrice] = useState("Any price");
@@ -179,7 +179,7 @@ function ExplorePage({ liked, onToggleLike, onAddToCart, onBack }: { liked: Set<
     return secondMatch - firstMatch || first.id - second.id;
   }).slice(0, 3);
   return <main className="utility-page explore-page">
-    <div className="utility-nav"><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button><button className="utility-back" onClick={onBack}>Back to home <span>↗</span></button></div>
+    <div className="utility-nav"><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button><div className="utility-actions"><button className="utility-cart" onClick={onOpenCart} aria-label={`Open your bag${cartCount ? ` with ${cartCount} items` : ""}`}><SvgIcon name="bag" size={15} /> Bag {cartCount > 0 && <b>{cartCount}</b>}</button><button className="utility-back" onClick={onBack}>Back to home <span>↗</span></button></div></div>
     <div className="explore-shell">
       <header className="explore-heading"><div><span className="section-label">Find something thoughtful</span><h1>Explore all gifts <SvgIcon name="gift" size={25} /></h1><p>Little surprises, chosen for the creators you love.</p></div><div className="explore-count"><strong>{visibleGifts.length}</strong><span>gifts found</span></div></header>
       <section className="smart-picks" aria-label="Smart recommendations"><div className="smart-picks-heading"><span className="smart-spark"><SvgIcon name="star" size={17} filled /></span><div><strong>Smart picks for you</strong><span>{query ? `Matched to “${query}”` : "Based on what the BakaBoost community loves"}</span></div></div><div className="smart-pick-list">{recommendations.map(gift => <button className="smart-pick" key={gift.id} onClick={() => onAddToCart(gift)}><img src={gift.img} alt="" /><span><strong>{gift.name}</strong><small>{gift.category} · {gift.price}</small></span><SvgIcon name="bag" size={15} /></button>)}</div></section>
@@ -317,6 +317,7 @@ export default function App() {
   const [subscribed, setSubscribed] = useState(false);
   const [notice, setNotice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
       const saved = window.localStorage.getItem("bakaboost-cart");
@@ -333,10 +334,12 @@ export default function App() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
+      setIsAuthenticated(Boolean(session));
       setAuthChecking(false);
     };
     void checkSession();
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(Boolean(session));
       if (event === "SIGNED_IN" && session?.user && !authMode && !profileView && !setupRole) setSetupRole("choose");
     });
     return () => { mounted = false; listener.subscription.unsubscribe(); };
@@ -401,7 +404,7 @@ export default function App() {
     return <BlogPage onBack={() => navigateUtility(null)} />;
   }
   if (utilityPage === "explore") {
-    return <ExplorePage liked={liked} onToggleLike={toggleLike} onAddToCart={addToCart} onBack={() => navigateUtility(null)} />;
+    return <ExplorePage liked={liked} cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} onToggleLike={toggleLike} onAddToCart={addToCart} onOpenCart={() => navigateUtility("cart")} onBack={() => navigateUtility(null)} />;
   }
 
   return (
@@ -441,7 +444,7 @@ export default function App() {
           {/* Auth */}
           <div className="nav-actions" style={{ display:"flex", gap:10, alignItems:"center", flexShrink:0, marginLeft:8 }}>
             <button onClick={() => setAuthMode("signin")} style={{ background:"none", border:"none", cursor:"pointer", fontWeight:800, fontSize:12, color:"#222" }}>Log in</button>
-            <button onClick={() => setAuthMode("signup")} className="pink-btn" style={{ padding:"8px 18px", fontSize:12 }}>Sign up</button>
+            {!isAuthenticated && <button onClick={() => setAuthMode("signup")} className="pink-btn" style={{ padding:"8px 18px", fontSize:12 }}>Sign up</button>}
             <button aria-label={`Open your bag${cartItems.length ? ` (${cartItems.length} items)` : ""}`} onClick={() => navigateUtility("cart")} style={{ width:32, height:32, borderRadius:"50%", background:"#fff", border:"1px solid #e8e5e7", display:"flex", alignItems:"center", justifyContent:"center", color:"#444", cursor:"pointer", position:"relative" }}><SvgIcon name="bag" size={16} />{cartItems.length > 0 && <span className="bag-count">{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>}</button>
           </div>
         </div>

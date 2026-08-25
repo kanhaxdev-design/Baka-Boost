@@ -247,6 +247,9 @@ footer .footer-bottom { border-color: #ffc8dd !important; }
 .utility-brand { display:flex; align-items:center; gap:7px; border:0; background:none; color:#5a1735; cursor:pointer; font:900 18px Nunito,sans-serif; }
 .utility-brand .brand-mark { color:#ff4d8d; display:flex; }
 .utility-back { display:inline-flex; align-items:center; gap:6px; border:0; background:none; color:#c2195b; cursor:pointer; font:800 11px Nunito,sans-serif; }
+.utility-actions { display:flex; align-items:center; gap:16px; }
+.utility-cart { display:inline-flex; align-items:center; gap:6px; border:1px solid #ffc1d8; border-radius:999px; padding:7px 11px; background:#fff0f6; color:#c2195b; cursor:pointer; font:900 10px Nunito,sans-serif; }
+.utility-cart b { display:grid; place-items:center; min-width:16px; height:16px; padding:0 4px; border-radius:999px; background:#ff4d8d; color:#fff; font-size:8px; }
 .utility-shell, .blog-shell { width:min(1120px, calc(100% - 40px)); margin:0 auto; padding:64px 0 90px; }
 .utility-heading { max-width:620px; margin-bottom:28px; }
 .utility-heading h1 { display:flex; align-items:center; gap:9px; margin:6px 0 8px; color:#5a1735; font-size:clamp(30px,5vw,48px); letter-spacing:-.04em; }
@@ -404,6 +407,8 @@ footer .footer-bottom { border-color: #ffc8dd !important; }
   .nav-inner > .brand-home span:first-child { font-size: 17px !important; }
   .utility-nav { height:52px; padding:0 14px; }
   .utility-brand { font-size:15px; }
+  .utility-actions { gap:8px; }
+  .utility-cart { padding:6px 8px; font-size:9px; }
   .utility-back { font-size:10px; }
   .utility-shell, .blog-shell { width:calc(100% - 28px); padding:38px 0 56px; }
   .explore-shell { width:calc(100% - 28px); padding:38px 0 56px; }
@@ -436,7 +441,9 @@ footer .footer-bottom { border-color: #ffc8dd !important; }
   .blog-card > img { height:150px; }
   .nav-search { order: 3; flex: 1 0 100% !important; max-width: none !important; margin: 0 !important; }
   .nav-search input { height: 29px; padding-top: 5px !important; padding-bottom: 5px !important; font-size: 11px !important; }
-  .nav-links { display: none !important; }
+  .nav-links { order: 4; display: flex !important; flex: 1 0 100%; gap: 18px !important; margin: 0 !important; padding: 2px 2px 4px; overflow-x: auto; scrollbar-width: none; }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-link { flex: 0 0 auto; font-size: 10px !important; white-space: nowrap; }
   .nav-actions { margin-left: 0 !important; gap: 4px !important; }
   .nav-actions button:first-child { display: none; }
   .nav-actions .pink-btn { padding: 6px 10px !important; font-size: 11px !important; }
