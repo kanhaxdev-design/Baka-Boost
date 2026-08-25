@@ -146,11 +146,15 @@ function RoleSetup({ onChoose }: { onChoose: (role: ProfileView) => void }) {
 
 function CartPage({ items, onBack, onUpdate, onRemove, onCheckout }: { items: CartItem[]; onBack: () => void; onUpdate: (id: number, delta: number) => void; onRemove: (id: number) => void; onCheckout: () => void }) {
   const subtotal = items.reduce((sum, item) => sum + Number(item.gift.price.replace("$", "")) * item.quantity, 0);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [checkout, setCheckout] = useState({ name: "", email: "", address: "", city: "", postal: "", country: "", payment: "card" });
+  const completeCheckout = (event: React.FormEvent) => { event.preventDefault(); setOrderPlaced(true); onCheckout(); };
   return <main className="utility-page cart-page">
     <div className="utility-nav"><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button><button className="utility-back" onClick={onBack}><SvgIcon name="search" size={14} /> Continue browsing</button></div>
     <div className="utility-shell">
       <div className="utility-heading"><span className="section-label">A little something for someone special</span><h1>Your gift bag <SvgIcon name="bag" size={25} /></h1><p>{items.length ? `${items.reduce((sum, item) => sum + item.quantity, 0)} thoughtful gifts waiting to be sent.` : "Your bag is ready for something thoughtful."}</p></div>
-      {items.length ? <div className="cart-layout"><section className="cart-items" aria-label="Gift bag items">{items.map(item => <article className="cart-item" key={item.gift.id}><img src={item.gift.img} alt={item.gift.name} /><div className="cart-item-info"><span>{item.gift.brand}</span><h2>{item.gift.name}</h2><strong>{item.gift.price}</strong></div><div className="cart-controls"><div><button aria-label={`Decrease ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, -1)}>−</button><span>{item.quantity}</span><button aria-label={`Increase ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, 1)}>+</button></div><button className="cart-remove" onClick={() => onRemove(item.gift.id)}>Remove</button></div></article>)}</section><aside className="cart-summary"><span className="section-label">Your total</span><h2>Ready to send some love?</h2><div className="summary-row"><span>Subtotal</span><strong>${subtotal.toFixed(2)}</strong></div><div className="summary-row"><span>Shipping</span><span>Calculated at checkout</span></div><button className="pink-btn cart-checkout" onClick={onCheckout}>Continue to checkout <span>→</span></button><small>Secure checkout · Private & anonymous</small></aside></div> : <div className="cart-empty"><div><SvgIcon name="bag" size={38} /></div><h2>Your gift bag is empty</h2><p>Find something lovely for a creator you care about.</p><button className="pink-btn" onClick={onBack}>Explore gifts <span>→</span></button></div>}
+      {items.length ? <>{!orderPlaced && <div className="cart-layout"><section className="cart-items" aria-label="Gift bag items">{items.map(item => <article className="cart-item" key={item.gift.id}><img src={item.gift.img} alt={item.gift.name} /><div className="cart-item-info"><span>{item.gift.brand}</span><h2>{item.gift.name}</h2><strong>{item.gift.price}</strong></div><div className="cart-controls"><div><button aria-label={`Decrease ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, -1)}>−</button><span>{item.quantity}</span><button aria-label={`Increase ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, 1)}>+</button></div><button className="cart-remove" onClick={() => onRemove(item.gift.id)}>Remove</button></div></article>)}</section><aside className="cart-summary"><span className="section-label">Your total</span><h2>Ready to send some love?</h2><div className="summary-row"><span>Subtotal</span><strong>${subtotal.toFixed(2)}</strong></div><div className="summary-row"><span>Shipping</span><span>Calculated at checkout</span></div><button className="pink-btn cart-checkout" onClick={() => setCheckoutOpen(true)}>Continue to checkout <span>→</span></button><small>Secure checkout · Private & anonymous</small></aside></div>}{checkoutOpen && <form className="checkout-form" onSubmit={completeCheckout}><div className="checkout-form-heading"><div><span className="section-label">Almost there</span><h2>Where should we send the love?</h2></div><button type="button" onClick={() => setCheckoutOpen(false)}>Close</button></div><div className="checkout-fields"><label>Full name<input value={checkout.name} onChange={event => setCheckout({ ...checkout, name: event.target.value })} required /></label><label>Email<input type="email" value={checkout.email} onChange={event => setCheckout({ ...checkout, email: event.target.value })} required /></label><label className="checkout-wide">Address<input value={checkout.address} onChange={event => setCheckout({ ...checkout, address: event.target.value })} required /></label><label>City<input value={checkout.city} onChange={event => setCheckout({ ...checkout, city: event.target.value })} required /></label><label>Postal code<input value={checkout.postal} onChange={event => setCheckout({ ...checkout, postal: event.target.value })} required /></label><label>Country<input value={checkout.country} onChange={event => setCheckout({ ...checkout, country: event.target.value })} required /></label></div><fieldset><legend>Payment method</legend><label><input type="radio" name="payment" value="card" checked={checkout.payment === "card"} onChange={event => setCheckout({ ...checkout, payment: event.target.value })} /> Card via payment gateway</label><label><input type="radio" name="payment" value="paypal" checked={checkout.payment === "paypal"} onChange={event => setCheckout({ ...checkout, payment: event.target.value })} /> PayPal</label></fieldset><button className="pink-btn" type="submit">Continue to secure payment · ${subtotal.toFixed(2)} <span>→</span></button><small>Payment details are handled by your configured gateway.</small></form>}{orderPlaced && <div className="order-success"><SvgIcon name="check" size={30} /><span className="section-label">Gift order ready</span><h2>You're making someone's day.</h2><p>Your contact and delivery details are saved for the payment step.</p><button className="pink-btn" onClick={onBack}>Continue browsing</button></div>}</> : <div className="cart-empty"><div><SvgIcon name="bag" size={38} /></div><h2>Your gift bag is empty</h2><p>Find something lovely for a creator you care about.</p><button className="pink-btn" onClick={onBack}>Explore gifts <span>→</span></button></div>}
     </div>
   </main>;
 }
@@ -204,8 +208,44 @@ function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSig
   const [gifts, setGifts] = useState<GiftRecord[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [wishlistForm, setWishlistForm] = useState({ name: "", price: "", image_url: "" });
+  const [spotifyForm, setSpotifyForm] = useState({ title: "", detail: "", spotify_url: "" });
+  const [showWishlistForm, setShowWishlistForm] = useState(false);
+  const [showSpotifyForm, setShowSpotifyForm] = useState(false);
+  const [connected, setConnected] = useState(false);
   const isCreator = view === "creator";
   const notify = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 2400); };
+
+  const addWishlistItem = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!wishlistForm.name.trim() || !wishlistForm.price.trim()) return;
+    if (supabase && profileId) {
+      const { data, error } = await supabase.from("wishlist_items").insert({ creator_id: profileId, name: wishlistForm.name.trim(), price: Number(wishlistForm.price), image_url: wishlistForm.image_url.trim() || null }).select("id, name, price, image_url").single();
+      if (error) { notify(error.message); return; }
+      setWishlist(prev => [...prev, data as WishlistRecord]);
+    } else {
+      setWishlist(prev => [...prev, { id: `local-${Date.now()}`, name: wishlistForm.name.trim(), price: Number(wishlistForm.price), image_url: wishlistForm.image_url.trim() || null }]);
+    }
+    setWishlistForm({ name: "", price: "", image_url: "" }); setShowWishlistForm(false); notify("Wishlist item added.");
+  };
+
+  const addSpotifyRecommendation = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!spotifyForm.title.trim() || !spotifyForm.spotify_url.trim() || (supabase && !profileId)) return;
+    if (supabase) {
+      const { data, error } = await supabase.from("spotify_recommendations").insert({ profile_id: profileId, title: spotifyForm.title.trim(), detail: spotifyForm.detail.trim(), spotify_url: spotifyForm.spotify_url.trim(), sort_order: recommendations.length }).select("id, title, detail, spotify_url, cover_url").single();
+      if (error) { notify(error.message); return; }
+      setRecommendations(prev => [...prev, data as SpotifyRecord]);
+    } else {
+      setRecommendations(prev => [...prev, { id: `local-${Date.now()}`, title: spotifyForm.title.trim(), detail: spotifyForm.detail.trim(), spotify_url: spotifyForm.spotify_url.trim(), cover_url: null }]);
+    }
+    setSpotifyForm({ title: "", detail: "", spotify_url: "" }); setShowSpotifyForm(false); notify("Spotify recommendation added.");
+  };
+
+  const connectWithCreator = () => {
+    setConnected(prev => !prev);
+    notify(connected ? "Creator removed from your connections." : "Creator added to your connections.");
+  };
 
   useEffect(() => {
     async function loadProfile() {
@@ -274,14 +314,15 @@ function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSig
             <p>{details?.bio || (isCreator ? "Set up your profile to share your work and wishlist." : "Set up your profile to keep track of the creators and gifts that matter to you.")}</p>
             <div className="profile-meta"><span><SvgIcon name="heart" size={13} filled /> {isCreator ? `${wishlist.length} wishlist items` : `${gifts.length} gifts sent`}</span><span><SvgIcon name="gift" size={13} /> {isCreator ? "Wishlist" : "Supporter profile"}</span></div>
           </div>
-          {!isCreator && <button onClick={() => notify("Creator discovery is coming next.")} className="pink-btn profile-primary">Explore creators <span>→</span></button>}
+          <div className="profile-hero-actions">{!isCreator && <button onClick={onExplore} className="pink-btn profile-primary">Explore creators <span>→</span></button>}{isCreator && <button onClick={connectWithCreator} className="outline-action profile-connect">{connected ? "Connected" : "Connect with me"}</button>}</div>
         </section>
 
         <div className="profile-layout">
           <div className="profile-main-column">
             {isCreator ? (
               <section className="profile-section wishlist-section">
-                <div className="profile-section-heading"><div><span className="section-label">A little something</span><h2>My wishlist</h2></div><button onClick={() => notify("Showing all wishlist items.")} className="outline-action">View all <span>→</span></button></div>
+                <div className="profile-section-heading"><div><span className="section-label">A little something</span><h2>My wishlist</h2></div><button onClick={() => setShowWishlistForm(prev => !prev)} className="outline-action">{showWishlistForm ? "Close" : "Add item"} <span>+</span></button></div>
+                {showWishlistForm && <form className="inline-form" onSubmit={addWishlistItem}><input value={wishlistForm.name} onChange={event => setWishlistForm({ ...wishlistForm, name: event.target.value })} placeholder="Gift name" required /><input type="number" min="0" step="0.01" value={wishlistForm.price} onChange={event => setWishlistForm({ ...wishlistForm, price: event.target.value })} placeholder="Price" required /><input value={wishlistForm.image_url} onChange={event => setWishlistForm({ ...wishlistForm, image_url: event.target.value })} placeholder="Image URL (optional)" /><button className="pink-btn" type="submit">Add to wishlist</button></form>}
                 {wishlist.length ? <div className="wishlist-row">{wishlist.map(item => <article className="wishlist-item" key={item.id}><div className="wishlist-art">{item.image_url ? <img src={item.image_url} alt="" /> : <SvgIcon name="gift" size={33} />}</div><div><h3>{item.name}</h3><span>${Number(item.price).toFixed(2)}</span></div></article>)}</div> : <div className="profile-empty-state">No wishlist items yet. Add your first item from creator settings.</div>}
               </section>
             ) : (
@@ -296,7 +337,8 @@ function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSig
 
           <aside className="profile-side-column">
             <section className="profile-section spotify-section">
-              <div className="spotify-heading"><div className="spotify-mark">●</div><div><span className="section-label">Optional profile add-on</span><h2>Spotify picks</h2></div><button className={`toggle ${spotifyEnabled ? "on" : ""}`} aria-label="Toggle Spotify recommendations" onClick={() => setSpotifyEnabled(!spotifyEnabled)}><span /></button></div>
+              <div className="spotify-heading"><div className="spotify-mark">●</div><div><span className="section-label">Optional profile add-on</span><h2>Spotify picks</h2></div><div className="spotify-actions"><button className="outline-action" onClick={() => setShowSpotifyForm(prev => !prev)}>{showSpotifyForm ? "Close" : "Add pick"}</button><button className={`toggle ${spotifyEnabled ? "on" : ""}`} aria-label="Toggle Spotify recommendations" onClick={() => setSpotifyEnabled(!spotifyEnabled)}><span /></button></div></div>
+              {showSpotifyForm && <form className="inline-form spotify-form" onSubmit={addSpotifyRecommendation}><input value={spotifyForm.title} onChange={event => setSpotifyForm({ ...spotifyForm, title: event.target.value })} placeholder="Song or playlist" required /><input value={spotifyForm.detail} onChange={event => setSpotifyForm({ ...spotifyForm, detail: event.target.value })} placeholder="Why you love it" /><input type="url" value={spotifyForm.spotify_url} onChange={event => setSpotifyForm({ ...spotifyForm, spotify_url: event.target.value })} placeholder="Spotify URL" required /><button className="pink-btn" type="submit">Save pick</button></form>}
               {spotifyEnabled ? recommendations.length ? <><p className="spotify-intro">{isCreator ? "What I listen to while I draw, stream, and dream up new things." : "A few songs that have been keeping me company lately."}</p><div className="playlist-list">{recommendations.map((playlist, index) => <div className="playlist-row" key={playlist.id}><span className="playlist-cover" style={{ background: "#f8d5df" }}>{index + 1}</span><span><strong>{playlist.title}</strong><small>{playlist.detail}</small></span><button onClick={() => window.open(playlist.spotify_url, "_blank", "noopener,noreferrer")} aria-label={`Open ${playlist.title}`}>▶</button></div>)}</div><a className="spotify-link" href="https://open.spotify.com" target="_blank" rel="noreferrer">Open Spotify <span>↗</span></a></> : <div className="spotify-off">No Spotify recommendations have been added yet.</div> : <div className="spotify-off">Spotify recommendations are hidden from your profile.</div>}
             </section>
             <section className="profile-section profile-stats"><div><strong>{isCreator ? wishlist.length : gifts.length}</strong><span>{isCreator ? "wishlist items" : "gifts sent"}</span></div><div><strong>{recommendations.length}</strong><span>Spotify picks</span></div></section>
