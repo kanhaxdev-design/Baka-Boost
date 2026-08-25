@@ -500,46 +500,38 @@ export default function App() {
       {/* ══ COMMUNITY BADGES ══ */}
       <section className="badges-section" style={{ background:"#ffffff", padding:"18px 24px 48px" }}>
         <div style={{ maxWidth:1200, margin:"0 auto" }}>
-          <div className="badge-grid" style={{ display:"grid", gridTemplateColumns:"1.25fr repeat(6,1fr)", gap:8, border:`1px solid ${C.border}`, borderRadius:16, padding:8 }}>
-            <div className="badge-intro" style={{ padding:"10px 12px", display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                <h2 style={{ fontWeight:900, fontSize:18, color:"#171717", margin:0 }}>Community Badges</h2>
-                <span style={{ color:C.pink, fontSize:16, fontWeight:900 }}>+</span>
-              </div>
-              <p style={{ fontSize:11, color:"#777", lineHeight:1.45, margin:"0 0 12px" }}>Collect badges.<br/>Show your support.</p>
-              <p style={{ fontSize:10, color:"#777", lineHeight:1.45, margin:"0 0 12px" }}>Unlock badges by supporting creators, reaching milestones, and being an amazing part of the BakaBoost community.</p>
-              <a href="#badges" onClick={(event) => { event.preventDefault(); document.querySelector('.badges-section')?.scrollIntoView({ behavior:"smooth", block:"center" }); }} style={{ fontSize:10, color:C.pink, fontWeight:800, textDecoration:"none", borderBottom:`1px solid ${C.pink}`, paddingBottom:2 }}>View all badges</a>
+          <div className="collection-heading">
+            <div>
+              <span className="section-label">A little something to collect</span>
+              <h2>Your Community Collection <span aria-hidden="true">✦</span></h2>
+              <p>Every kind act leaves a little sparkle behind.</p>
             </div>
-          {BADGES.map(b=>(
-              <div
-                key={b.name}
-                className="badge-box"
-                style={{
-                  background: b.unlocked ? "#ffffff" : "#fff8fa",
-                  border: `1.5px solid ${b.unlocked ? "#ffc2da" : "#f5c0d2"}`,
-                  borderRadius:16,
-                  opacity: b.unlocked ? 1 : 0.55,
-                }}
-              >
-                <div style={{
-                  width:56, height:56, borderRadius:"50%", fontSize:28,
-                  background: b.unlocked ? "#ffd6e8" : "#f7c8da",
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  boxShadow: b.unlocked ? "0 4px 14px rgba(255,77,141,.18)" : "none",
-                }}>
-                  <SvgIcon name={b.icon as IconName} size={28} />
+            <div className="collection-count" aria-label="4 of 6 badges unlocked"><strong>4/6</strong><span>unlocked</span></div>
+          </div>
+
+          <div className="collection-progress" role="progressbar" aria-label="Community badge progress" aria-valuemin={0} aria-valuemax={6} aria-valuenow={4}>
+            <span style={{ width:"66.67%" }} />
+          </div>
+
+          <div className="collection-layout">
+            <div className="badge-grid">
+              {BADGES.map((b, index) => (
+                <div key={b.name} className={`badge-box ${b.unlocked ? "is-unlocked" : "is-locked"}`} tabIndex={0}>
+                  <div className="badge-frame"><SvgIcon name={b.icon as IconName} size={27} /></div>
+                  <div className="badge-copy"><strong className="badge-name">{b.name}</strong><span>{b.desc}</span></div>
+                  <span className="badge-status">{b.unlocked ? "Unlocked" : index === 4 ? "3/5" : "2/5"}</span>
                 </div>
-                  <div className="badge-name" style={{ fontWeight:800, fontSize:12, color: b.unlocked ? C.pinkDark : C.textSoft }}>{b.name}</div>
-                <div style={{ fontSize:11, color: b.unlocked ? C.textMid : C.textSoft, lineHeight:1.45 }}>{b.desc}</div>
-                <div style={{
-                  fontSize:11, fontWeight:800, padding:"2px 10px", borderRadius:999,
-                  background: b.unlocked ? "#ffc2da" : "#f5c0d2",
-                  color: b.unlocked ? C.pinkDark : C.textSoft,
-                }}>
-                  {b.unlocked ? "Unlocked" : "Locked"}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            <aside className="next-badge" aria-label="Next badge: Top Gifter">
+              <div className="next-badge-top"><span>Next badge</span><SvgIcon name="trophy" size={15} /></div>
+              <div className="next-badge-frame"><SvgIcon name="trophy" size={31} /></div>
+              <strong>Top Gifter</strong>
+              <p>Send two more gifts to unlock this one.</p>
+              <div className="next-badge-progress"><span style={{ width:"60%" }} /></div>
+              <span className="next-badge-meta">3 of 5 gifts</span>
+            </aside>
           </div>
         </div>
       </section>
