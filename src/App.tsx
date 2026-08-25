@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 import heroBg from "@/imports/ChatGPT_Image_Aug_25__2026__02_29_21_PM.png";
-import howCreate from "@/imports/how-create.jpg";
-import howShare from "@/imports/how-share.jpg";
-import howGift from "@/imports/how-gift-transparent.png";
+import howItWorksBg from "@/imports/how-it-works-bg.png";
+import productOne from "@/imports/p1.jpg.jpg";
+import productTwo from "@/imports/p2.jpg.jpg";
+import productThree from "@/imports/p3.jpg.jpg";
+import productFour from "@/imports/p4.jpg";
+import productFive from "@/imports/p5.jpg.jpg";
 import { hasSupabaseConfig, supabase } from "@/lib/supabase";
 
 const GIFTS = [
-  { id:1, name:"Sony WH-1000XM5",       brand:"Sony",        price:"$349", img:"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=200&fit=crop&auto=format" },
-  { id:2, name:"Fujifilm Instax Mini 12", brand:"Fujifilm",    price:"$79",  img:"https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=300&h=200&fit=crop&auto=format" },
-  { id:3, name:"Logitech MX Keys Mini",  brand:"Logitech",    price:"$99",  img:"https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=300&h=200&fit=crop&auto=format" },
-  { id:4, name:"Blue Yeti Nano",         brand:"Blue",        price:"$99",  img:"https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=300&h=200&fit=crop&auto=format" },
-  { id:5, name:"Coquette Tote Bag",      brand:"Accessories", price:"$35",  img:"https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=300&h=200&fit=crop&auto=format" },
+  { id:1, name:"Sony WH-1000XM5",       brand:"Sony",        price:"$349", img:productOne },
+  { id:2, name:"Fujifilm Instax Mini 12", brand:"Fujifilm",    price:"$79",  img:productTwo },
+  { id:3, name:"Logitech MX Keys Mini",  brand:"Logitech",    price:"$99",  img:productThree },
+  { id:4, name:"Blue Yeti Nano",         brand:"Blue",        price:"$99",  img:productFour },
+  { id:5, name:"Coquette Tote Bag",      brand:"Accessories", price:"$35",  img:productFive },
 ];
 
 const BADGES = [
@@ -335,7 +338,7 @@ export default function App() {
           {/* Links */}
           <div className="nav-links" style={{ display:"flex", gap:26, alignItems:"center", marginLeft:"auto" }}>
               {['Explore','For creators','How it works','Blog'].map(l=>(
-                <a key={l} href={l === "Explore" ? "#user-profile" : l === "For creators" ? "#creator-profile" : "#"} className="nav-link" onClick={(event) => { if (l === "Explore" || l === "For creators") { event.preventDefault(); setProfileView(l === "Explore" ? "user" : "creator"); } }}>{l}</a>
+                <a key={l} href={l === "Explore" ? "#user-profile" : l === "For creators" ? "#creator-profile" : l === "How it works" ? "#how-it-works" : "#"} className="nav-link" onClick={(event) => { if (l === "Explore" || l === "For creators") { event.preventDefault(); setProfileView(l === "Explore" ? "user" : "creator"); } else if (l === "How it works") { event.preventDefault(); document.querySelector('#how-it-works')?.scrollIntoView({ behavior:"smooth", block:"start" }); } }}>{l}</a>
             ))}
           </div>
 
@@ -349,7 +352,7 @@ export default function App() {
       </nav>
 
       {/* ══ HERO ══ */}
-      <section style={{
+      <section className="hero-section" style={{
         position:"relative", overflow:"hidden", minHeight:432,
         display:"flex", alignItems:"center",
       }}>
@@ -408,33 +411,13 @@ export default function App() {
       </section>
 
       {/* ══ HOW IT WORKS ══ */}
-      <section className="how-section" aria-labelledby="how-it-works-title">
+      <section id="how-it-works" className="how-section" aria-labelledby="how-it-works-title">
         <div className="how-shell">
           <div className="how-heading">
-            <span className="how-kicker"><SvgIcon name="heart" size={12} filled /> Simple, sweet, and meaningful</span>
+            <span className="how-kicker"><SvgIcon name="heart" size={12} filled /> For creators, by fans</span>
             <h2 id="how-it-works-title">How it works <span aria-hidden="true">✦</span></h2>
-            <p>Three little steps to make someone's day.</p>
           </div>
-
-          <div className="how-grid">
-            {[
-              { number:"01", image:howCreate, title:"Create your wishlist", desc:"Add the things you love and let your community know what would make you smile." },
-              { number:"02", image:howShare, title:"Share your link", desc:"Post your wishlist anywhere your fans can find you, from socials to your bio." },
-              { number:"03", image:howGift, title:"Get boosted", desc:"Your fans choose a gift, and we take care of the rest. Feel the love." },
-            ].map((step, index) => (
-              <div className={`how-step how-step-${index + 1}`} key={step.number}>
-                <div className="how-image-wrap">
-                  <img src={step.image} alt="" className="how-image" />
-                  <span className="how-number">{step.number}</span>
-                </div>
-                <div className="how-step-copy">
-                  <h3>{step.title}</h3>
-                  <p>{step.desc}</p>
-                </div>
-                {index < 2 && <span className="how-arrow" aria-hidden="true">♡</span>}
-              </div>
-            ))}
-          </div>
+          <img src={howItWorksBg} alt="How BakaBoost works" className="how-background-image" />
         </div>
       </section>
 
