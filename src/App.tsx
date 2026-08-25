@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import heroBg from "@/imports/ChatGPT_Image_Aug_25__2026__02_29_21_PM.png";
+import howCreate from "@/imports/how-create.jpg";
+import howShare from "@/imports/how-share.jpg";
+import howGift from "@/imports/how-gift-transparent.png";
 import { hasSupabaseConfig, supabase } from "@/lib/supabase";
 
 const GIFTS = [
@@ -400,6 +403,37 @@ export default function App() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ HOW IT WORKS ══ */}
+      <section className="how-section" aria-labelledby="how-it-works-title">
+        <div className="how-shell">
+          <div className="how-heading">
+            <span className="how-kicker"><SvgIcon name="heart" size={12} filled /> Simple, sweet, and meaningful</span>
+            <h2 id="how-it-works-title">How it works <span aria-hidden="true">✦</span></h2>
+            <p>Three little steps to make someone's day.</p>
+          </div>
+
+          <div className="how-grid">
+            {[
+              { number:"01", image:howCreate, title:"Create your wishlist", desc:"Add the things you love and let your community know what would make you smile." },
+              { number:"02", image:howShare, title:"Share your link", desc:"Post your wishlist anywhere your fans can find you, from socials to your bio." },
+              { number:"03", image:howGift, title:"Get boosted", desc:"Your fans choose a gift, and we take care of the rest. Feel the love." },
+            ].map((step, index) => (
+              <div className={`how-step how-step-${index + 1}`} key={step.number}>
+                <div className="how-image-wrap">
+                  <img src={step.image} alt="" className="how-image" />
+                  <span className="how-number">{step.number}</span>
+                </div>
+                <div className="how-step-copy">
+                  <h3>{step.title}</h3>
+                  <p>{step.desc}</p>
+                </div>
+                {index < 2 && <span className="how-arrow" aria-hidden="true">♡</span>}
+              </div>
+            ))}
           </div>
         </div>
       </section>
