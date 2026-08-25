@@ -168,7 +168,7 @@ footer { background: #fff0f6 !important; }
 footer .footer-bottom { border-color: #ffc8dd !important; }
 
 .auth-page { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(430px, 560px); background: #fff; }
-.auth-art { position: relative; min-height: 100vh; overflow: hidden; padding: 30px 6vw; display: flex; align-items: flex-end; background: linear-gradient(135deg, rgba(255,247,250,.9), rgba(255,224,237,.7)), url('/src/imports/ChatGPT_Image_Aug_25__2026__02_29_21_PM.png') center/cover; }
+.auth-art { position: relative; min-height: 100vh; overflow: hidden; padding: 30px 6vw; display: flex; align-items: flex-end; background-position: center; background-size: cover; }
 .auth-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.15), rgba(79,15,40,.32)); pointer-events: none; }
 .auth-back { position: absolute; top: 30px; left: 6vw; z-index: 1; border: 0; background: rgba(255,255,255,.8); color: #222; border-radius: 999px; padding: 10px 15px; font: 800 12px Nunito, sans-serif; cursor: pointer; }
 .auth-art-copy { position: relative; z-index: 1; max-width: 430px; color: #fff; }

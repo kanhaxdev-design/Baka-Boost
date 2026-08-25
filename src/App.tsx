@@ -5,7 +5,7 @@ import productOne from "@/imports/p1.jpg.jpg";
 import productTwo from "@/imports/p2.jpg.jpg";
 import productThree from "@/imports/p3.jpg.jpg";
 import productFour from "@/imports/p4.jpg";
-import productFive from "@/imports/p5.jpg.jpg";
+import productFive from "@/imports/p5.jpg";
 import { hasSupabaseConfig, supabase } from "@/lib/supabase";
 
 const GIFTS = [
@@ -96,7 +96,7 @@ function AuthPage({ mode, onBack, onSwitch, onAuthenticated }: { mode: "signin" 
 
   return (
     <main className="auth-page">
-      <div className="auth-art" aria-hidden="true">
+      <div className="auth-art" aria-hidden="true" style={{ backgroundImage:`linear-gradient(135deg, rgba(255,247,250,.9), rgba(255,224,237,.7)), url("${heroBg}")` }}>
         <button className="auth-back" onClick={onBack}>← Back to BakaBoost</button>
         <div className="auth-art-copy">
           <span className="auth-kicker"><SvgIcon name="heart" size={12} filled /> For creators. By fans.</span>
