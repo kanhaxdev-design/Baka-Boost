@@ -9,11 +9,11 @@ import productFive from "@/imports/p5.jpg";
 import { hasSupabaseConfig, supabase } from "@/lib/supabase";
 
 const GIFTS = [
-  { id:1, name:"Sony WH-1000XM5",       brand:"Sony",        price:"$349", img:productOne },
-  { id:2, name:"Fujifilm Instax Mini 12", brand:"Fujifilm",    price:"$79",  img:productTwo },
-  { id:3, name:"Logitech MX Keys Mini",  brand:"Logitech",    price:"$99",  img:productThree },
-  { id:4, name:"Blue Yeti Nano",         brand:"Blue",        price:"$99",  img:productFour },
-  { id:5, name:"Coquette Tote Bag",      brand:"Accessories", price:"$35",  img:productFive },
+  { id:1, name:"Sony WH-1000XM5",       brand:"Sony",        category:"Tech",        price:"$349", img:productOne },
+  { id:2, name:"Fujifilm Instax Mini 12", brand:"Fujifilm",    category:"Creative",   price:"$79",  img:productTwo },
+  { id:3, name:"Logitech MX Keys Mini",  brand:"Logitech",    category:"Tech",        price:"$99",  img:productThree },
+  { id:4, name:"Blue Yeti Nano",         brand:"Blue",        category:"Creative",   price:"$99",  img:productFour },
+  { id:5, name:"Coquette Tote Bag",      brand:"Accessories", category:"Accessories", price:"$35",  img:productFive },
 ];
 
 const BADGES = [
@@ -137,9 +137,56 @@ function AuthPage({ mode, onBack, onSwitch, onAuthenticated }: { mode: "signin" 
 
 type ProfileView = "creator" | "user";
 type UserDetails = { name: string; username: string; bio: string };
+type CartItem = { gift: typeof GIFTS[number]; quantity: number };
+type UtilityPage = "cart" | "blog" | "explore" | null;
 
 function RoleSetup({ onChoose }: { onChoose: (role: ProfileView) => void }) {
   return <main className="role-setup"><div className="role-card"><div className="auth-brand"><span><SvgIcon name="bow" size={22} filled /></span> BakaBoost</div><div className="role-heading"><span className="section-label">Welcome to BakaBoost</span><h1>How will you make this place yours?</h1><p>Choose your path and we will set up the right profile for you.</p></div><div className="role-options"><button onClick={() => onChoose("creator")}><span className="role-icon"><SvgIcon name="star" size={28} /></span><span><strong>I'm a creator</strong><small>Share your wishlist and let your community show up for you.</small></span><b>→</b></button><button onClick={() => onChoose("user")}><span className="role-icon"><SvgIcon name="gift" size={28} /></span><span><strong>I'm here to support</strong><small>Discover creators, send thoughtful gifts, and collect moments.</small></span><b>→</b></button></div></div></main>;
+}
+
+function CartPage({ items, onBack, onUpdate, onRemove, onCheckout }: { items: CartItem[]; onBack: () => void; onUpdate: (id: number, delta: number) => void; onRemove: (id: number) => void; onCheckout: () => void }) {
+  const subtotal = items.reduce((sum, item) => sum + Number(item.gift.price.replace("$", "")) * item.quantity, 0);
+  return <main className="utility-page cart-page">
+    <div className="utility-nav"><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button><button className="utility-back" onClick={onBack}><SvgIcon name="search" size={14} /> Continue browsing</button></div>
+    <div className="utility-shell">
+      <div className="utility-heading"><span className="section-label">A little something for someone special</span><h1>Your gift bag <SvgIcon name="bag" size={25} /></h1><p>{items.length ? `${items.reduce((sum, item) => sum + item.quantity, 0)} thoughtful gifts waiting to be sent.` : "Your bag is ready for something thoughtful."}</p></div>
+      {items.length ? <div className="cart-layout"><section className="cart-items" aria-label="Gift bag items">{items.map(item => <article className="cart-item" key={item.gift.id}><img src={item.gift.img} alt={item.gift.name} /><div className="cart-item-info"><span>{item.gift.brand}</span><h2>{item.gift.name}</h2><strong>{item.gift.price}</strong></div><div className="cart-controls"><div><button aria-label={`Decrease ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, -1)}>−</button><span>{item.quantity}</span><button aria-label={`Increase ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, 1)}>+</button></div><button className="cart-remove" onClick={() => onRemove(item.gift.id)}>Remove</button></div></article>)}</section><aside className="cart-summary"><span className="section-label">Your total</span><h2>Ready to send some love?</h2><div className="summary-row"><span>Subtotal</span><strong>${subtotal.toFixed(2)}</strong></div><div className="summary-row"><span>Shipping</span><span>Calculated at checkout</span></div><button className="pink-btn cart-checkout" onClick={onCheckout}>Continue to checkout <span>→</span></button><small>Secure checkout · Private & anonymous</small></aside></div> : <div className="cart-empty"><div><SvgIcon name="bag" size={38} /></div><h2>Your gift bag is empty</h2><p>Find something lovely for a creator you care about.</p><button className="pink-btn" onClick={onBack}>Explore gifts <span>→</span></button></div>}
+    </div>
+  </main>;
+}
+
+function BlogPage({ onBack }: { onBack: () => void }) {
+  const stories = [{ tag:"COMMUNITY", title:"The little gifts that become big memories", text:"Thoughtful support is more than a package. It is a tiny reminder that someone's work found its way to you.", image:heroBg }, { tag:"CREATOR NOTES", title:"Making room for the things you love", text:"A wishlist gives your community a simple, joyful way to show up for the work you make.", image:productTwo }, { tag:"BAKABOOST GUIDE", title:"Five ways to send a little extra love", text:"From a handwritten note to a perfectly timed surprise, kindness always looks good on you.", image:productFive }];
+  return <main className="utility-page blog-page"><div className="utility-nav"><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button><button className="utility-back" onClick={onBack}>Back to home <span>↗</span></button></div><div className="blog-shell"><header className="blog-heading"><span className="section-label">The BakaBoost journal</span><h1>Little stories, <em>big feelings.</em></h1><p>Notes on creativity, community, and the joy of showing up for someone.</p></header><article className="blog-feature"><img src={stories[0].image} alt="A creator surrounded by thoughtful gifts" /><div><span className="blog-tag">{stories[0].tag}</span><h2>{stories[0].title}</h2><p>{stories[0].text}</p><button className="pink-btn" onClick={() => window.scrollTo({ top: 520, behavior: "smooth" })}>Read the story <span>→</span></button></div></article><div className="blog-grid">{stories.slice(1).map(story => <article className="blog-card" key={story.title}><img src={story.image} alt="" /><div><span className="blog-tag">{story.tag}</span><h2>{story.title}</h2><p>{story.text}</p><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Read more <span>→</span></button></div></article>)}</div></div></main>;
+}
+
+function ExplorePage({ liked, onToggleLike, onAddToCart, onBack }: { liked: Set<number>; onToggleLike: (id: number) => void; onAddToCart: (gift: typeof GIFTS[number]) => void; onBack: () => void }) {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("All gifts");
+  const [price, setPrice] = useState("Any price");
+  const [sort, setSort] = useState("Recommended");
+  const categories = ["All gifts", ...Array.from(new Set(GIFTS.map(gift => gift.category)))];
+  const visibleGifts = GIFTS.filter(gift => {
+    const matchesQuery = `${gift.name} ${gift.brand} ${gift.category}`.toLowerCase().includes(query.toLowerCase());
+    const matchesCategory = category === "All gifts" || gift.category === category;
+    const amount = Number(gift.price.replace("$", ""));
+    const matchesPrice = price === "Any price" || (price === "Under $50" && amount < 50) || (price === "$50 - $150" && amount >= 50 && amount <= 150) || (price === "$150+" && amount > 150);
+    return matchesQuery && matchesCategory && matchesPrice;
+  }).sort((first, second) => sort === "Price: low to high" ? Number(first.price.slice(1)) - Number(second.price.slice(1)) : sort === "Price: high to low" ? Number(second.price.slice(1)) - Number(first.price.slice(1)) : first.id - second.id);
+  const recommendations = [...GIFTS].sort((first, second) => {
+    const firstMatch = `${first.name} ${first.brand} ${first.category}`.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+    const secondMatch = `${second.name} ${second.brand} ${second.category}`.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+    return secondMatch - firstMatch || first.id - second.id;
+  }).slice(0, 3);
+  return <main className="utility-page explore-page">
+    <div className="utility-nav"><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button><button className="utility-back" onClick={onBack}>Back to home <span>↗</span></button></div>
+    <div className="explore-shell">
+      <header className="explore-heading"><div><span className="section-label">Find something thoughtful</span><h1>Explore all gifts <SvgIcon name="gift" size={25} /></h1><p>Little surprises, chosen for the creators you love.</p></div><div className="explore-count"><strong>{visibleGifts.length}</strong><span>gifts found</span></div></header>
+      <section className="smart-picks" aria-label="Smart recommendations"><div className="smart-picks-heading"><span className="smart-spark"><SvgIcon name="star" size={17} filled /></span><div><strong>Smart picks for you</strong><span>{query ? `Matched to “${query}”` : "Based on what the BakaBoost community loves"}</span></div></div><div className="smart-pick-list">{recommendations.map(gift => <button className="smart-pick" key={gift.id} onClick={() => onAddToCart(gift)}><img src={gift.img} alt="" /><span><strong>{gift.name}</strong><small>{gift.category} · {gift.price}</small></span><SvgIcon name="bag" size={15} /></button>)}</div></section>
+      <div className="explore-controls"><label className="explore-search"><SvgIcon name="search" size={16} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search gifts, brands, or categories" /></label><div className="explore-selects"><label>Category<select value={category} onChange={event => setCategory(event.target.value)}>{categories.map(option => <option key={option}>{option}</option>)}</select></label><label>Price<select value={price} onChange={event => setPrice(event.target.value)}><option>Any price</option><option>Under $50</option><option>$50 - $150</option><option>$150+</option></select></label><label>Sort<select value={sort} onChange={event => setSort(event.target.value)}><option>Recommended</option><option>Price: low to high</option><option>Price: high to low</option></select></label></div></div>
+      {visibleGifts.length ? <div className="explore-grid">{visibleGifts.map(gift => <article className="explore-product" key={gift.id}><div className="explore-product-image"><img src={gift.img} alt={gift.name} /><button className={`heart-btn${liked.has(gift.id) ? " active" : ""}`} aria-label={`${liked.has(gift.id) ? "Remove" : "Add"} ${gift.name} from favorites`} onClick={() => onToggleLike(gift.id)}><SvgIcon name="heart" size={15} filled={liked.has(gift.id)} /></button></div><div className="explore-product-copy"><span>{gift.category} · {gift.brand}</span><h2>{gift.name}</h2><div><strong>{gift.price}</strong><button className="add-circle" aria-label={`Add ${gift.name} to your bag`} onClick={() => onAddToCart(gift)}>+</button></div></div></article>)}</div> : <div className="explore-empty"><SvgIcon name="search" size={28} /><h2>No gifts found</h2><p>Try a different search or clear one of the filters.</p><button className="pink-btn" onClick={() => { setQuery(""); setCategory("All gifts"); setPrice("Any price"); }}>Clear filters</button></div>}
+    </div>
+  </main>;
 }
 
 type ProfileRecord = { id: string; role: ProfileView; display_name: string; username: string; bio: string; spotify_enabled: boolean };
@@ -270,6 +317,15 @@ export default function App() {
   const [subscribed, setSubscribed] = useState(false);
   const [notice, setNotice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    try {
+      const saved = window.localStorage.getItem("bakaboost-cart");
+      return saved ? JSON.parse(saved) as CartItem[] : [];
+    } catch {
+      return [];
+    }
+  });
+  const [utilityPage, setUtilityPage] = useState<UtilityPage>(() => window.location.hash === "#cart" ? "cart" : window.location.hash === "#blog" ? "blog" : window.location.hash === "#explore" ? "explore" : null);
 
   useEffect(() => {
     if (!supabase) { setAuthChecking(false); return; }
@@ -286,9 +342,44 @@ export default function App() {
     return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, []);
 
+  useEffect(() => {
+    window.localStorage.setItem("bakaboost-cart", JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  useEffect(() => {
+    const syncRoute = () => setUtilityPage(window.location.hash === "#cart" ? "cart" : window.location.hash === "#blog" ? "blog" : window.location.hash === "#explore" ? "explore" : null);
+    window.addEventListener("hashchange", syncRoute);
+    window.addEventListener("popstate", syncRoute);
+    return () => { window.removeEventListener("hashchange", syncRoute); window.removeEventListener("popstate", syncRoute); };
+  }, []);
+
+  useEffect(() => {
+    document.title = utilityPage === "cart" ? "Your Gift Bag | BakaBoost" : utilityPage === "blog" ? "Journal | BakaBoost" : utilityPage === "explore" ? "Explore Gifts | BakaBoost" : "BakaBoost";
+  }, [utilityPage]);
+
   const notify = (message: string) => {
     setNotice(message);
     window.setTimeout(() => setNotice(""), 2600);
+  };
+
+  const addToCart = (gift: typeof GIFTS[number]) => {
+    setCartItems(prev => {
+      const existing = prev.find(item => item.gift.id === gift.id);
+      if (existing) return prev.map(item => item.gift.id === gift.id ? { ...item, quantity: item.quantity + 1 } : item);
+      return [...prev, { gift, quantity: 1 }];
+    });
+    notify(`${gift.name} added to your bag.`);
+  };
+
+  const updateCart = (id: number, delta: number) => setCartItems(prev => prev.flatMap(item => item.gift.id === id ? [{ ...item, quantity: item.quantity + delta }].filter(next => next.quantity > 0) : [item]));
+  const navigateUtility = (page: UtilityPage) => {
+    const hash = page ? `#${page}` : "#home";
+    window.history.pushState({}, "", hash);
+    setUtilityPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const toggleLike = (id:number) => {
+    setLiked(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   };
 
   if (authChecking) return <div className="app-loading">Loading BakaBoost...</div>;
@@ -303,10 +394,15 @@ export default function App() {
   if (profileView) {
     return <ProfilePage view={profileView} onBack={() => setProfileView(null)} onOpen={setProfileView} />;
   }
-
-  const toggleLike = (id:number) => {
-    setLiked(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
-  };
+  if (utilityPage === "cart") {
+    return <CartPage items={cartItems} onBack={() => navigateUtility(null)} onUpdate={updateCart} onRemove={id => setCartItems(prev => prev.filter(item => item.gift.id !== id))} onCheckout={() => notify("Checkout is coming soon.")} />;
+  }
+  if (utilityPage === "blog") {
+    return <BlogPage onBack={() => navigateUtility(null)} />;
+  }
+  if (utilityPage === "explore") {
+    return <ExplorePage liked={liked} onToggleLike={toggleLike} onAddToCart={addToCart} onBack={() => navigateUtility(null)} />;
+  }
 
   return (
     <div style={{ fontFamily:"'Nunito',sans-serif", background:C.bg, color:C.text, minHeight:"100vh" }}>
@@ -338,7 +434,7 @@ export default function App() {
           {/* Links */}
           <div className="nav-links" style={{ display:"flex", gap:26, alignItems:"center", marginLeft:"auto" }}>
               {['Explore','For creators','How it works','Blog'].map(l=>(
-                <a key={l} href={l === "Explore" ? "#user-profile" : l === "For creators" ? "#creator-profile" : l === "How it works" ? "#how-it-works" : "#"} className="nav-link" onClick={(event) => { if (l === "Explore" || l === "For creators") { event.preventDefault(); setProfileView(l === "Explore" ? "user" : "creator"); } else if (l === "How it works") { event.preventDefault(); document.querySelector('#how-it-works')?.scrollIntoView({ behavior:"smooth", block:"start" }); } }}>{l}</a>
+                <a key={l} href={l === "Explore" ? "#explore" : l === "For creators" ? "#creator-profile" : l === "How it works" ? "#how-it-works" : "#blog"} className="nav-link" onClick={(event) => { if (l === "Explore") { event.preventDefault(); navigateUtility("explore"); } else if (l === "For creators") { event.preventDefault(); setProfileView("creator"); } else if (l === "How it works") { event.preventDefault(); document.querySelector('#how-it-works')?.scrollIntoView({ behavior:"smooth", block:"start" }); } else if (l === "Blog") { event.preventDefault(); navigateUtility("blog"); } }}>{l}</a>
             ))}
           </div>
 
@@ -346,7 +442,7 @@ export default function App() {
           <div className="nav-actions" style={{ display:"flex", gap:10, alignItems:"center", flexShrink:0, marginLeft:8 }}>
             <button onClick={() => setAuthMode("signin")} style={{ background:"none", border:"none", cursor:"pointer", fontWeight:800, fontSize:12, color:"#222" }}>Log in</button>
             <button onClick={() => setAuthMode("signup")} className="pink-btn" style={{ padding:"8px 18px", fontSize:12 }}>Sign up</button>
-            <button aria-label="Open your bag" onClick={() => notify("Your bag is ready for gifts.")} style={{ width:32, height:32, borderRadius:"50%", background:"#fff", border:"1px solid #e8e5e7", display:"flex", alignItems:"center", justifyContent:"center", color:"#444", cursor:"pointer" }}><SvgIcon name="bag" size={16} /></button>
+            <button aria-label={`Open your bag${cartItems.length ? ` (${cartItems.length} items)` : ""}`} onClick={() => navigateUtility("cart")} style={{ width:32, height:32, borderRadius:"50%", background:"#fff", border:"1px solid #e8e5e7", display:"flex", alignItems:"center", justifyContent:"center", color:"#444", cursor:"pointer", position:"relative" }}><SvgIcon name="bag" size={16} />{cartItems.length > 0 && <span className="bag-count">{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>}</button>
           </div>
         </div>
       </nav>
@@ -449,7 +545,7 @@ export default function App() {
               </h2>
               <div style={{ fontSize:12, color:"#777", marginTop:4 }}>Discover what fans are wishing for</div>
             </div>
-            <a className="explore-gifts" href="#gifts" onClick={(event) => { event.preventDefault(); document.querySelector('.gift-grid')?.scrollIntoView({ behavior:"smooth", block:"center" }); }} style={{ fontSize:12, fontWeight:800, color:C.pink, textDecoration:"none", border:`1px solid ${C.border}`, borderRadius:999, padding:"8px 14px" }}>Explore all gifts →</a>
+            <a className="explore-gifts" href="#explore" onClick={(event) => { event.preventDefault(); navigateUtility("explore"); }} style={{ fontSize:12, fontWeight:800, color:C.pink, textDecoration:"none", border:`1px solid ${C.border}`, borderRadius:999, padding:"8px 14px" }}>Explore all gifts →</a>
           </div>
 
           <div className="gift-grid" style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14 }}>
@@ -470,7 +566,7 @@ export default function App() {
                   <div style={{ fontSize:13, fontWeight:800, color:"#222", marginBottom:10, lineHeight:1.35 }}>{g.name}</div>
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                     <span style={{ fontWeight:900, fontSize:16, color:"#222" }}>{g.price}</span>
-                    <button aria-label={`Add ${g.name} to your bag`} onClick={() => notify(`${g.name} added to your bag.`)} className="add-circle">+</button>
+                    <button aria-label={`Add ${g.name} to your bag`} onClick={() => addToCart(g)} className="add-circle">+</button>
                   </div>
                 </div>
               </div>
@@ -618,7 +714,7 @@ export default function App() {
                 <ul style={{ listStyle:"none", margin:0, padding:0, display:"flex", flexDirection:"column", gap:10 }}>
                   {col.links.map(l=>(
                     <li key={l}>
-                      <a href="#" onClick={(event) => { event.preventDefault(); notify(`${l} is coming soon.`); }}
+                      <a href={l === "Blog" ? "#blog" : "#"} onClick={(event) => { event.preventDefault(); if (l === "Blog") navigateUtility("blog"); else notify(`${l} is coming soon.`); }}
                         style={{ fontSize:13, color:"#777", textDecoration:"none", fontWeight:700, transition:"color .2s" }}
                         onMouseOver={e=>{ e.currentTarget.style.color=C.pinkDark; }}
                         onMouseOut={e=>{ e.currentTarget.style.color=C.textMid; }}
