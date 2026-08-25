@@ -194,7 +194,7 @@ type WishlistRecord = { id: string; name: string; price: number; image_url: stri
 type SpotifyRecord = { id: string; title: string; detail: string; spotify_url: string; cover_url: string | null };
 type GiftRecord = { id: string; gift_name: string; sent_at: string; creator: { display_name: string } | null };
 
-function ProfilePage({ view, onBack, onOpen }: { view: ProfileView; onBack: () => void; onOpen: (view: ProfileView) => void }) {
+function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSignOut }: { view: ProfileView; onBack: () => void; onOpen: (view: ProfileView) => void; onExplore: () => void; onCart: () => void; cartCount: number; onSignOut: () => void }) {
   const [spotifyEnabled, setSpotifyEnabled] = useState(true);
   const [notice, setNotice] = useState("");
   const [details, setDetails] = useState<UserDetails | null>(null);
@@ -247,10 +247,11 @@ function ProfilePage({ view, onBack, onOpen }: { view: ProfileView; onBack: () =
       <nav className="profile-nav">
         <button className="profile-logo" onClick={onBack}><span><SvgIcon name="bow" size={19} filled /></span> BakaBoost</button>
         <div className="profile-nav-links">
+          <button onClick={onExplore}>Explore gifts</button>
           <button className={!isCreator ? "active" : ""} onClick={() => onOpen("user")}>My profile</button>
           <button className={isCreator ? "active" : ""} onClick={() => onOpen("creator")}>Creator profile</button>
         </div>
-        <button className="profile-back" onClick={onBack}>Back home</button>
+        <div className="profile-nav-actions"><button className="profile-cart-link" onClick={onCart}><SvgIcon name="bag" size={14} /> Cart {cartCount > 0 && <b>{cartCount}</b>}</button><button className="profile-back" onClick={onSignOut}>Sign out</button></div>
       </nav>
 
       <main className="profile-shell">
@@ -381,6 +382,9 @@ export default function App() {
     setUtilityPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const openProfile = (view: ProfileView) => { setUtilityPage(null); setProfileView(view); window.history.pushState({}, "", `#${view}-profile`); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const signOut = async () => { if (supabase) await supabase.auth.signOut(); setIsAuthenticated(false); setProfileView(null); setSetupRole(null); navigateUtility(null); };
   const toggleLike = (id:number) => {
     setLiked(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   };
@@ -392,10 +396,10 @@ export default function App() {
   }
   if (setupRole) {
     if (setupRole === "choose") return <RoleSetup onChoose={setSetupRole} />;
-    return <ProfilePage view={setupRole} onBack={() => setSetupRole(null)} onOpen={setSetupRole} />;
+    return <ProfilePage view={setupRole} onBack={() => navigateUtility(null)} onOpen={openProfile} onExplore={() => navigateUtility("explore")} onCart={() => navigateUtility("cart")} cartCount={cartCount} onSignOut={signOut} />;
   }
   if (profileView) {
-    return <ProfilePage view={profileView} onBack={() => setProfileView(null)} onOpen={setProfileView} />;
+    return <ProfilePage view={profileView} onBack={() => navigateUtility(null)} onOpen={openProfile} onExplore={() => navigateUtility("explore")} onCart={() => navigateUtility("cart")} cartCount={cartCount} onSignOut={signOut} />;
   }
   if (utilityPage === "cart") {
     return <CartPage items={cartItems} onBack={() => navigateUtility(null)} onUpdate={updateCart} onRemove={id => setCartItems(prev => prev.filter(item => item.gift.id !== id))} onCheckout={() => notify("Checkout is coming soon.")} />;
