@@ -1,0 +1,10 @@
+{
+  "description": "Creates advanced, user-friendly UI designs that enhance user experience and meet professional standards for designers and developers.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
