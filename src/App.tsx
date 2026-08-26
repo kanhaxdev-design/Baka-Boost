@@ -46,7 +46,7 @@ const C = {
   border:   "#ffd6e8",
 };
 
-type IconName = "bow" | "search" | "bag" | "mask" | "gift" | "lock" | "shield" | "heart" | "phone" | "crown" | "star" | "angel" | "trophy" | "mail" | "check" | "social" | "google" | "apple";
+type IconName = "bow" | "search" | "bag" | "mask" | "gift" | "lock" | "shield" | "heart" | "phone" | "crown" | "star" | "angel" | "trophy" | "mail" | "check" | "social" | "google" | "apple" | "music";
 
 function SvgIcon({ name, size = 24, filled = false }: { name: IconName; size?: number; filled?: boolean }) {
   const common = { fill: filled ? "currentColor" : "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -67,6 +67,7 @@ function SvgIcon({ name, size = 24, filled = false }: { name: IconName; size?: n
     mail: <><rect {...common} x="3" y="5" width="18" height="14" rx="2"/><path {...common} d="m4 7 8 6 8-6"/></>,
     check: <path {...common} d="m5 12 4 4L19 6"/>,
     social: <circle {...common} cx="12" cy="12" r="8"/>,
+    music: <><path {...common} d="M9 18V5l10-2v13"/><circle {...common} cx="6" cy="18" r="3"/><circle {...common} cx="16" cy="16" r="3"/></>,
     google: <text x="12" y="17" textAnchor="middle" fontSize="16" fontWeight="800" fill="currentColor" stroke="none">G</text>,
     apple: <><path {...common} fill="currentColor" d="M16.7 12.7c0-2.1 1.7-3.1 1.8-3.2-1-.1-2.2-1.1-3.7-1.1-1.3 0-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.7-.4 6.6 1.1 8.7.8 1 1.6 2.1 2.8 2.1 1.1 0 1.6-.7 3-.7s1.8.7 3 .7c1.2 0 2-.9 2.7-2 .9-1.3 1.3-2.6 1.3-2.7-.1 0-1.9-.8-1.9-3.9Z"/><path {...common} fill="currentColor" d="M14.3 6.8c.6-.7 1-1.7.9-2.7-.9 0-1.9.6-2.5 1.3-.5.6-1 1.6-.9 2.6.9.1 1.9-.5 2.5-1.2Z"/></>,
   };
@@ -91,6 +92,10 @@ function AuthPage({ mode, onBack, onSwitch, onAuthenticated }: { mode: "signin" 
     }
     const result = isSignUp ? await supabase.auth.signUp({ email, password }) : await supabase.auth.signInWithPassword({ email, password });
     if (result.error) { setAuthError(result.error.message); return; }
+    if (!result.data.session) {
+      setAuthError(isSignUp ? "Check your email to confirm your account, then sign in before creating your profile." : "No active session was created. Please sign in again.");
+      return;
+    }
     setSubmitted(true); window.setTimeout(onAuthenticated, 450);
   };
 
@@ -137,15 +142,76 @@ function AuthPage({ mode, onBack, onSwitch, onAuthenticated }: { mode: "signin" 
 
 type ProfileView = "creator" | "user";
 type UserDetails = { name: string; username: string; bio: string };
-type CartItem = { gift: typeof GIFTS[number]; quantity: number };
-type UtilityPage = "cart" | "blog" | "explore" | null;
+type CartProduct = { id: string; name: string; price: string; img: string | null; brand: string; item_url?: string | null };
+type CartItem = { gift: typeof GIFTS[number] | CartProduct; quantity: number };
+type UtilityPage = "cart" | "blog" | "explore" | "creators" | "top-picks" | null;
+
+function BrowserNavigation() {
+  const [navigation, setNavigation] = useState({ index: 0, length: 0 });
+  useEffect(() => {
+    const sync = () => setNavigation({ index: Number(window.history.state?.bakaboostIndex || 0), length: Number(sessionStorage.getItem("bakaboost-history-length") || 1) });
+    sync();
+    window.addEventListener("popstate", sync);
+    window.addEventListener("bakaboost:navigation", sync);
+    return () => { window.removeEventListener("popstate", sync); window.removeEventListener("bakaboost:navigation", sync); };
+  }, []);
+  const canGoBack = navigation.index > 0;
+  const canGoForward = navigation.index < navigation.length - 1;
+  return <div className="browser-navigation" aria-label="Page navigation"><span>Navigate</span><button type="button" disabled={!canGoBack} onClick={() => canGoBack && window.history.back()} aria-label="Go back" title="Back">&lt;</button><button type="button" disabled={!canGoForward} onClick={() => canGoForward && window.history.forward()} aria-label="Go forward" title="Forward">&gt;</button></div>;
+}
 
 function RoleSetup({ onChoose }: { onChoose: (role: ProfileView) => void }) {
   return <main className="role-setup"><div className="role-card"><div className="auth-brand"><span><SvgIcon name="bow" size={22} filled /></span> BakaBoost</div><div className="role-heading"><span className="section-label">Welcome to BakaBoost</span><h1>How will you make this place yours?</h1><p>Choose your path and we will set up the right profile for you.</p></div><div className="role-options"><button onClick={() => onChoose("creator")}><span className="role-icon"><SvgIcon name="star" size={28} /></span><span><strong>I'm a creator</strong><small>Share your wishlist and let your community show up for you.</small></span><b>→</b></button><button onClick={() => onChoose("user")}><span className="role-icon"><SvgIcon name="gift" size={28} /></span><span><strong>I'm here to support</strong><small>Discover creators, send thoughtful gifts, and collect moments.</small></span><b>→</b></button></div></div></main>;
 }
 
-function CartPage({ items, onBack, onUpdate, onRemove, onCheckout }: { items: CartItem[]; onBack: () => void; onUpdate: (id: number, delta: number) => void; onRemove: (id: number) => void; onCheckout: () => void }) {
-  const subtotal = items.reduce((sum, item) => sum + Number(item.gift.price.replace("$", "")) * item.quantity, 0);
+function CreatorDirectoryPage({ onBack, onView }: { onBack: () => void; onView: (id: string) => void }) {
+  const [query, setQuery] = useState("");
+  const [creators, setCreators] = useState<CreatorRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!supabase) { setLoading(false); return; }
+    void supabase.from("profiles").select("id, display_name, username, bio").eq("role", "creator").order("created_at").then(({ data }) => { setCreators((data || []) as CreatorRecord[]); setLoading(false); });
+  }, []);
+  const visible = creators.filter(creator => `${creator.display_name} ${creator.username} ${creator.bio}`.toLowerCase().includes(query.toLowerCase()));
+  return <main className="utility-page creator-directory"><div className="utility-nav"><div className="utility-nav-start"><BrowserNavigation /><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button></div><button className="utility-back" onClick={onBack}>Back home <span>↗</span></button></div><div className="directory-shell"><header className="directory-heading"><span className="section-label">Find someone to support</span><h1>Top picked by creators <SvgIcon name="heart" size={27} filled /></h1><p>Browse real creator wishlists and choose a thoughtful gift.</p></header><label className="directory-search"><SvgIcon name="search" size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search creators by name or username" /></label>{loading ? <div className="profile-loading">Finding creators...</div> : visible.length ? <div className="creator-grid">{visible.map(creator => <button className="creator-card" key={creator.id} onClick={() => onView(creator.id)}><span className="creator-avatar">{creator.display_name.charAt(0).toUpperCase()}</span><span><strong>{creator.display_name}</strong><small>@{creator.username}</small><p>{creator.bio || "See this creator's curated wishlist."}</p></span><b>View wishlist <span>→</span></b></button>)}</div> : <div className="explore-empty"><SvgIcon name="search" size={28} /><h2>No creators found</h2><p>Try another name or username.</p></div>}</div></main>;
+}
+
+function AmazonSelectionPage({ onBack }: { onBack: () => void }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<AmazonSearchResult[]>([]);
+  const [category, setCategory] = useState("all");
+  const curatedProducts: AmazonSearchResult[] = [
+    { asin: "curated-audio", title: "Portable speaker for creative days", price: "$49.99", description: "A compact everyday speaker for studios, desks, and quiet creative breaks.", rating: "4.6 stars", review_count: "2,140 reviews", availability: "In stock", image_url: productOne, product_url: "https://www.amazon.com/s?k=portable+bluetooth+speaker", source: "amazon" },
+    { asin: "curated-camera", title: "Instant camera for little moments", price: "$79.00", description: "A playful camera for capturing behind-the-scenes memories and community moments.", rating: "4.7 stars", review_count: "8,520 reviews", availability: "In stock", image_url: productTwo, product_url: "https://www.amazon.com/s?k=instant+camera", source: "amazon" },
+    { asin: "curated-desk", title: "A calm desk light", price: "$35.00", description: "Soft, warm light for late-night making, editing, writing, and planning.", rating: "4.5 stars", review_count: "1,286 reviews", availability: "In stock", image_url: productThree, product_url: "https://www.amazon.com/s?k=desk+lamp", source: "amazon" },
+    { asin: "curated-tech", title: "Wireless headphones for focus", price: "$99.00", description: "Comfortable everyday headphones for focused work and creative flow.", rating: "4.6 stars", review_count: "12,400 reviews", availability: "In stock", image_url: productFour, product_url: "https://www.amazon.com/s?k=wireless+headphones", source: "amazon" },
+  ];
+  const [searching, setSearching] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [profileId, setProfileId] = useState<string | null>(null);
+  useEffect(() => { if (supabase) void supabase.auth.getUser().then(({ data }) => setProfileId(data.user?.id || null)); }, []);
+  const search = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!supabase || query.trim().length < 2) { setNotice("Enter at least two characters."); return; }
+    setSearching(true); setNotice("");
+    const { data, error } = await supabase.functions.invoke("amazon-search", { body: { query: query.trim() } });
+    setSearching(false);
+    if (error || data?.error) { setNotice(error?.message || data?.error || "Amazon search failed."); return; }
+    setResults((data?.products || []) as AmazonSearchResult[]);
+  };
+  const add = async (product: AmazonSearchResult) => {
+    if (!supabase || !profileId) { setNotice("Sign in before adding products."); return; }
+    const priceMatch = product.price.replace(/[^0-9.]/g, "").match(/\d+(?:\.\d+)?/);
+    const { error } = await supabase.from("wishlist_items").insert({ creator_id: profileId, name: product.title, price: priceMatch ? Number(priceMatch[0]) : 0, asin: product.asin, description: product.description, rating: product.rating, review_count: product.review_count, availability: product.availability, image_url: product.image_url, item_url: product.product_url });
+    if (error) { setNotice(error.message.includes("asin") ? "Run the wishlist migration in Supabase first." : error.message); return; }
+    setResults(prev => prev.filter(item => item.asin !== product.asin)); setNotice("Added to your wishlist.");
+  };
+  const visibleProducts = results.length ? results : curatedProducts.filter(product => category === "all" || (category === "desk" ? product.title.toLowerCase().includes("desk") : category === "creative" ? product.description.toLowerCase().includes("creative") : product.description.toLowerCase().includes("everyday")));
+  return <main className="utility-page top-picks-page"><div className="utility-nav"><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button><button className="utility-back" onClick={onBack}>Back to profile <span>↗</span></button></div><div className="top-picks-shell"><header className="top-picks-heading"><span className="section-label">A curated shop for your community</span><h1>Top picked by creators <SvgIcon name="gift" size={27} /></h1><p>Thoughtful products selected for creative days, calm desks, and everyday joy.</p></header><div className="top-picks-categories"><button className={category === "all" ? "active" : ""} onClick={() => { setCategory("all"); setResults([]); }}>All products</button><button className={category === "desk" ? "active" : ""} onClick={() => { setCategory("desk"); setResults([]); }}>For the desk</button><button className={category === "creative" ? "active" : ""} onClick={() => { setCategory("creative"); setResults([]); }}>Creative tools</button><button className={category === "comfort" ? "active" : ""} onClick={() => { setCategory("comfort"); setResults([]); }}>Comfort picks</button></div><form className="top-picks-search" onSubmit={search}><SvgIcon name="search" size={18} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search products on Amazon" /><button className="pink-btn" type="submit" disabled={searching}>{searching ? "Searching..." : "Search"}</button></form>{notice && <p className="top-picks-notice" role="status">{notice}</p>}<div className="top-picks-featured"><div><span className="top-picks-overline">Curated for makers</span><h2>Useful things, chosen with intention.</h2><p>A small edit of products creators reach for, love, and would actually add to their wishlist.</p></div><span className="top-picks-count">{visibleProducts.length} picks</span></div><div className="top-picks-grid">{visibleProducts.map(product => <article className="top-pick-card" key={product.asin}><div className="top-pick-art">{product.image_url ? <img src={product.image_url} alt="" /> : <SvgIcon name="gift" size={38} />}</div><div className="top-pick-copy"><span className="top-pick-label">Amazon pick</span><h2>{product.title}</h2><strong>{product.price}</strong><p>{product.description || "Product details available on Amazon."}</p><div className="top-pick-meta"><span>{product.rating || "Not rated"}</span><span>{product.review_count || "No reviews"}</span></div><button className="pink-btn" onClick={() => void add(product)}>Add to wishlist <span>+</span></button></div></article>)}</div></div></main>;
+}
+
+function CartPage({ items, onBack, onUpdate, onRemove, onCheckout }: { items: CartItem[]; onBack: () => void; onUpdate: (id: string | number, delta: number) => void; onRemove: (id: string | number) => void; onCheckout: () => void }) {
+  const subtotal = items.reduce((sum, item) => sum + Number(item.gift.price.replace(/[^0-9.]/g, "")) * item.quantity, 0);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [checkout, setCheckout] = useState({ name: "", email: "", address: "", city: "", postal: "", country: "", payment: "card" });
@@ -154,7 +220,7 @@ function CartPage({ items, onBack, onUpdate, onRemove, onCheckout }: { items: Ca
     <div className="utility-nav"><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button><button className="utility-back" onClick={onBack}><SvgIcon name="search" size={14} /> Continue browsing</button></div>
     <div className="utility-shell">
       <div className="utility-heading"><span className="section-label">A little something for someone special</span><h1>Your gift bag <SvgIcon name="bag" size={25} /></h1><p>{items.length ? `${items.reduce((sum, item) => sum + item.quantity, 0)} thoughtful gifts waiting to be sent.` : "Your bag is ready for something thoughtful."}</p></div>
-      {items.length ? <>{!orderPlaced && <div className="cart-layout"><section className="cart-items" aria-label="Gift bag items">{items.map(item => <article className="cart-item" key={item.gift.id}><img src={item.gift.img} alt={item.gift.name} /><div className="cart-item-info"><span>{item.gift.brand}</span><h2>{item.gift.name}</h2><strong>{item.gift.price}</strong></div><div className="cart-controls"><div><button aria-label={`Decrease ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, -1)}>−</button><span>{item.quantity}</span><button aria-label={`Increase ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, 1)}>+</button></div><button className="cart-remove" onClick={() => onRemove(item.gift.id)}>Remove</button></div></article>)}</section><aside className="cart-summary"><span className="section-label">Your total</span><h2>Ready to send some love?</h2><div className="summary-row"><span>Subtotal</span><strong>${subtotal.toFixed(2)}</strong></div><div className="summary-row"><span>Shipping</span><span>Calculated at checkout</span></div><button className="pink-btn cart-checkout" onClick={() => setCheckoutOpen(true)}>Continue to checkout <span>→</span></button><small>Secure checkout · Private & anonymous</small></aside></div>}{checkoutOpen && <form className="checkout-form" onSubmit={completeCheckout}><div className="checkout-form-heading"><div><span className="section-label">Almost there</span><h2>Where should we send the love?</h2></div><button type="button" onClick={() => setCheckoutOpen(false)}>Close</button></div><div className="checkout-fields"><label>Full name<input value={checkout.name} onChange={event => setCheckout({ ...checkout, name: event.target.value })} required /></label><label>Email<input type="email" value={checkout.email} onChange={event => setCheckout({ ...checkout, email: event.target.value })} required /></label><label className="checkout-wide">Address<input value={checkout.address} onChange={event => setCheckout({ ...checkout, address: event.target.value })} required /></label><label>City<input value={checkout.city} onChange={event => setCheckout({ ...checkout, city: event.target.value })} required /></label><label>Postal code<input value={checkout.postal} onChange={event => setCheckout({ ...checkout, postal: event.target.value })} required /></label><label>Country<input value={checkout.country} onChange={event => setCheckout({ ...checkout, country: event.target.value })} required /></label></div><fieldset><legend>Payment method</legend><label><input type="radio" name="payment" value="card" checked={checkout.payment === "card"} onChange={event => setCheckout({ ...checkout, payment: event.target.value })} /> Card via payment gateway</label><label><input type="radio" name="payment" value="paypal" checked={checkout.payment === "paypal"} onChange={event => setCheckout({ ...checkout, payment: event.target.value })} /> PayPal</label></fieldset><button className="pink-btn" type="submit">Continue to secure payment · ${subtotal.toFixed(2)} <span>→</span></button><small>Payment details are handled by your configured gateway.</small></form>}{orderPlaced && <div className="order-success"><SvgIcon name="check" size={30} /><span className="section-label">Gift order ready</span><h2>You're making someone's day.</h2><p>Your contact and delivery details are saved for the payment step.</p><button className="pink-btn" onClick={onBack}>Continue browsing</button></div>}</> : <div className="cart-empty"><div><SvgIcon name="bag" size={38} /></div><h2>Your gift bag is empty</h2><p>Find something lovely for a creator you care about.</p><button className="pink-btn" onClick={onBack}>Explore gifts <span>→</span></button></div>}
+      {items.length ? <>{!orderPlaced && <div className="cart-layout"><section className="cart-items" aria-label="Gift bag items">{items.map(item => <article className="cart-item" key={item.gift.id}><>{item.gift.img ? <img src={item.gift.img} alt={item.gift.name} /> : <div className="cart-product-placeholder"><SvgIcon name="gift" size={28} /></div>}</><div className="cart-item-info"><span>{item.gift.brand}</span><h2>{item.gift.name}</h2><strong>{item.gift.price}</strong>{"item_url" in item.gift && item.gift.item_url && <a className="wishlist-link" href={item.gift.item_url} target="_blank" rel="noreferrer">View product <span>↗</span></a>}</div><div className="cart-controls"><div><button aria-label={`Decrease ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, -1)}>−</button><span>{item.quantity}</span><button aria-label={`Increase ${item.gift.name} quantity`} onClick={() => onUpdate(item.gift.id, 1)}>+</button></div><button className="cart-remove" onClick={() => onRemove(item.gift.id)}>Remove</button></div></article>)}</section><aside className="cart-summary"><span className="section-label">Your bag</span><h2>Ready to send some love?</h2><div className="summary-row"><span>Subtotal</span><strong>${subtotal.toFixed(2)}</strong></div><div className="summary-row"><span>Amazon items</span><span>Purchased on Amazon</span></div><button className="pink-btn cart-checkout" onClick={() => setCheckoutOpen(true)}>Review purchase <span>→</span></button><small>Your payment and delivery are completed securely on Amazon.</small></aside></div>}{checkoutOpen && <form className="checkout-form" onSubmit={completeCheckout}><div className="checkout-form-heading"><div><span className="section-label">One last step</span><h2>Open your Amazon items</h2></div><button type="button" onClick={() => setCheckoutOpen(false)}>Close</button></div><p className="checkout-note">Your bag is ready. Open each Amazon product to complete payment and delivery there.</p><div className="amazon-cart-links">{items.filter(item => "item_url" in item.gift && item.gift.item_url).map(item => <a className="pink-btn" key={item.gift.id} href={item.gift.item_url || "#"} target="_blank" rel="noreferrer">Buy {item.gift.name} <span>↗</span></a>)}</div><button className="outline-action" type="button" onClick={() => { setOrderPlaced(true); onCheckout(); }}>Done reviewing</button></form>}{orderPlaced && <div className="order-success"><SvgIcon name="check" size={30} /><span className="section-label">Ready to purchase</span><h2>Your Amazon links are open.</h2><p>Complete payment and delivery on Amazon. Your bag is still here for the next visit.</p><button className="pink-btn" onClick={onBack}>Continue browsing</button></div>}</> : <div className="cart-empty"><div><SvgIcon name="bag" size={38} /></div><h2>Your gift bag is empty</h2><p>Find something lovely for a creator you care about.</p><button className="pink-btn" onClick={onBack}>Explore gifts <span>→</span></button></div>}
     </div>
   </main>;
 }
@@ -194,39 +260,95 @@ function ExplorePage({ liked, cartCount, onToggleLike, onAddToCart, onOpenCart, 
 }
 
 type ProfileRecord = { id: string; role: ProfileView; display_name: string; username: string; bio: string; spotify_enabled: boolean };
-type WishlistRecord = { id: string; name: string; price: number; image_url: string | null };
+type CreatorRecord = Pick<ProfileRecord, "id" | "display_name" | "username" | "bio">;
+type WishlistRecord = { id: string; name: string; price: number; asin?: string | null; description?: string; rating?: string; review_count?: string; availability?: string; image_url: string | null; item_url?: string | null };
+type AmazonSearchResult = { asin: string; title: string; price: string; description: string; rating: string; review_count: string; availability: string; image_url: string | null; product_url: string; source: "amazon" };
+type SpotifySearchResult = { kind: "track" | "playlist"; id: string; title: string; detail: string; spotify_url: string; cover_url: string | null };
 type SpotifyRecord = { id: string; title: string; detail: string; spotify_url: string; cover_url: string | null };
 type GiftRecord = { id: string; gift_name: string; sent_at: string; creator: { display_name: string } | null };
 
-function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSignOut }: { view: ProfileView; onBack: () => void; onOpen: (view: ProfileView) => void; onExplore: () => void; onCart: () => void; cartCount: number; onSignOut: () => void }) {
+function spotifyEmbedUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.hostname !== "open.spotify.com") return null;
+    const parts = url.pathname.split("/").filter(Boolean);
+    if (parts.length < 2 || !["track", "album", "playlist", "artist", "show", "episode"].includes(parts[0])) return null;
+    return `https://open.spotify.com/embed/${parts[0]}/${parts[1]}?utm_source=generator`;
+  } catch {
+    return null;
+  }
+}
+
+function ProfilePage({ view, creatorId, onBack, onOpen, onExploreGifts, onExploreCreators, onTopPicks, onCart, onAddToCart, cartCount, onSignOut }: { view: ProfileView; creatorId?: string; onBack: () => void; onOpen: (view: ProfileView) => void; onExploreGifts: () => void; onExploreCreators: () => void; onTopPicks: () => void; onCart: () => void; onAddToCart: (product: CartProduct) => void; cartCount: number; onSignOut: () => void }) {
   const [spotifyEnabled, setSpotifyEnabled] = useState(true);
   const [notice, setNotice] = useState("");
   const [details, setDetails] = useState<UserDetails | null>(null);
   const [form, setForm] = useState<UserDetails>({ name: "", username: "", bio: "" });
   const [wishlist, setWishlist] = useState<WishlistRecord[]>([]);
+  const [creatorWishlist, setCreatorWishlist] = useState<WishlistRecord[]>([]);
+  const [creatorName, setCreatorName] = useState("");
   const [recommendations, setRecommendations] = useState<SpotifyRecord[]>([]);
   const [gifts, setGifts] = useState<GiftRecord[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [wishlistForm, setWishlistForm] = useState({ name: "", price: "", image_url: "" });
+  const [wishlistForm, setWishlistForm] = useState({ name: "", price: "", image_url: "", item_url: "" });
   const [spotifyForm, setSpotifyForm] = useState({ title: "", detail: "", spotify_url: "" });
   const [showWishlistForm, setShowWishlistForm] = useState(false);
   const [showSpotifyForm, setShowSpotifyForm] = useState(false);
+  const [spotifyQuery, setSpotifyQuery] = useState("");
+  const [spotifyResults, setSpotifyResults] = useState<SpotifySearchResult[]>([]);
+  const [spotifySearching, setSpotifySearching] = useState(false);
+  const [amazonQuery, setAmazonQuery] = useState("");
+  const [amazonResults, setAmazonResults] = useState<AmazonSearchResult[]>([]);
+  const [amazonSearching, setAmazonSearching] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<AmazonSearchResult | WishlistRecord | null>(null);
   const [connected, setConnected] = useState(false);
   const isCreator = view === "creator";
+  const isOwner = !creatorId;
+  const canEdit = isCreator && isOwner;
   const notify = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 2400); };
 
   const addWishlistItem = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!wishlistForm.name.trim() || !wishlistForm.price.trim()) return;
     if (supabase && profileId) {
-      const { data, error } = await supabase.from("wishlist_items").insert({ creator_id: profileId, name: wishlistForm.name.trim(), price: Number(wishlistForm.price), image_url: wishlistForm.image_url.trim() || null }).select("id, name, price, image_url").single();
+      const { data, error } = await supabase.from("wishlist_items").insert({ creator_id: profileId, name: wishlistForm.name.trim(), price: Number(wishlistForm.price), image_url: wishlistForm.image_url.trim() || null, item_url: wishlistForm.item_url.trim() || null }).select("id, name, price, image_url, item_url").single();
       if (error) { notify(error.message); return; }
       setWishlist(prev => [...prev, data as WishlistRecord]);
     } else {
-      setWishlist(prev => [...prev, { id: `local-${Date.now()}`, name: wishlistForm.name.trim(), price: Number(wishlistForm.price), image_url: wishlistForm.image_url.trim() || null }]);
+      setWishlist(prev => [...prev, { id: `local-${Date.now()}`, name: wishlistForm.name.trim(), price: Number(wishlistForm.price), image_url: wishlistForm.image_url.trim() || null, item_url: wishlistForm.item_url.trim() || null }]);
     }
-    setWishlistForm({ name: "", price: "", image_url: "" }); setShowWishlistForm(false); notify("Wishlist item added.");
+    setWishlistForm({ name: "", price: "", image_url: "", item_url: "" }); setShowWishlistForm(false); notify("Wishlist item added.");
+  };
+
+  const searchAmazon = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!supabase || amazonQuery.trim().length < 2) { notify("Enter at least two characters to search Amazon."); return; }
+    setAmazonSearching(true); setAmazonResults([]);
+    const { data, error } = await supabase.functions.invoke("amazon-search", { body: { query: amazonQuery.trim() } });
+    setAmazonSearching(false);
+    if (error) { notify(error.message || "Amazon search failed."); return; }
+    if (data?.error) { notify(data.error); return; }
+    setAmazonResults((data?.products || []) as AmazonSearchResult[]);
+  };
+
+  const addAmazonResult = async (product: AmazonSearchResult) => {
+    const priceMatch = product.price.replace(/[^0-9.]/g, "").match(/\d+(?:\.\d+)?/);
+    const price = priceMatch ? Number(priceMatch[0]) : 0;
+    if (!profileId) { notify("Save your profile before adding wishlist items."); return; }
+    if (supabase) {
+      const productRecord = { creator_id: profileId, name: product.title, price, asin: product.asin, description: product.description, rating: product.rating, review_count: product.review_count, availability: product.availability, image_url: product.image_url, item_url: product.product_url };
+      let result = await supabase.from("wishlist_items").insert(productRecord).select("id, name, price, asin, description, rating, review_count, availability, image_url, item_url").single();
+      if (result.error?.message.includes("asin") || result.error?.message.includes("description")) {
+        result = await supabase.from("wishlist_items").insert({ creator_id: profileId, name: product.title, price, image_url: product.image_url, item_url: product.product_url }).select("id, name, price, image_url, item_url").single();
+      }
+      const { data, error } = result;
+      if (error) { notify(error.message); return; }
+      setWishlist(prev => [...prev, data as WishlistRecord]);
+    } else {
+      setWishlist(prev => [...prev, { id: `local-${Date.now()}`, name: product.title, price, asin: product.asin, description: product.description, rating: product.rating, review_count: product.review_count, availability: product.availability, image_url: product.image_url, item_url: product.product_url }]);
+    }
+    setAmazonResults(prev => prev.filter(item => item.asin !== product.asin)); setSelectedProduct(null); notify("Amazon item added to your wishlist.");
   };
 
   const addSpotifyRecommendation = async (event: React.FormEvent) => {
@@ -242,6 +364,30 @@ function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSig
     setSpotifyForm({ title: "", detail: "", spotify_url: "" }); setShowSpotifyForm(false); notify("Spotify recommendation added.");
   };
 
+  const searchSpotify = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!supabase || spotifyQuery.trim().length < 2) { notify("Enter at least two characters to search Spotify."); return; }
+    setSpotifySearching(true); setSpotifyResults([]);
+    const { data, error } = await supabase.functions.invoke("spotify-search", { body: { query: spotifyQuery.trim() } });
+    setSpotifySearching(false);
+    if (error) { notify(error.message || "Spotify search failed."); return; }
+    if (data?.error) { notify(data.error); return; }
+    setSpotifyResults((data?.results || []) as SpotifySearchResult[]);
+  };
+
+  const addSpotifyResult = async (result: SpotifySearchResult) => {
+    if (!profileId) { notify("Save your profile before adding Spotify picks."); return; }
+    const record = { profile_id: profileId, title: result.title, detail: result.detail, spotify_url: result.spotify_url, cover_url: result.cover_url, sort_order: recommendations.length };
+    if (supabase) {
+      const { data, error } = await supabase.from("spotify_recommendations").insert(record).select("id, title, detail, spotify_url, cover_url").single();
+      if (error) { notify(error.message); return; }
+      setRecommendations(prev => [...prev, data as SpotifyRecord]);
+    } else {
+      setRecommendations(prev => [...prev, { id: `local-${Date.now()}`, title: result.title, detail: result.detail, spotify_url: result.spotify_url, cover_url: result.cover_url }]);
+    }
+    setSpotifyResults(prev => prev.filter(item => item.id !== result.id)); notify("Spotify pick added.");
+  };
+
   const connectWithCreator = () => {
     setConnected(prev => !prev);
     notify(connected ? "Creator removed from your connections." : "Creator added to your connections.");
@@ -251,24 +397,33 @@ function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSig
     async function loadProfile() {
       setLoading(true);
       if (!supabase) { setLoading(false); return; }
-      const { data: { user } } = await supabase.auth.getUser();
+      const configuredSupabase = supabase;
+      const { data: { user } } = await configuredSupabase.auth.getUser();
       if (!user) { setLoading(false); return; }
-      const { data: profile } = await supabase.from("profiles").select("id, role, display_name, username, bio, spotify_enabled").eq("id", user.id).eq("role", view).maybeSingle<ProfileRecord>();
+      const profileQuery = configuredSupabase.from("profiles").select("id, role, display_name, username, bio, spotify_enabled").eq("role", view);
+      const { data: profile } = await (creatorId ? profileQuery.eq("id", creatorId) : profileQuery.eq("id", user.id)).maybeSingle<ProfileRecord>();
       if (!profile) { setLoading(false); return; }
       setProfileId(profile.id); setSpotifyEnabled(profile.spotify_enabled); setDetails({ name: profile.display_name, username: profile.username, bio: profile.bio }); setForm({ name: profile.display_name, username: profile.username, bio: profile.bio });
       if (view === "creator") {
-        const { data } = await supabase.from("wishlist_items").select("id, name, price, image_url").eq("creator_id", profile.id).order("created_at");
+        const { data } = await configuredSupabase.from("wishlist_items").select("id, name, price, asin, description, rating, review_count, availability, image_url, item_url").eq("creator_id", profile.id).order("created_at");
         setWishlist((data || []) as WishlistRecord[]);
       } else {
-        const { data } = await supabase.from("gift_history").select("id, gift_name, sent_at, creator:creator_id(display_name)").eq("supporter_id", profile.id).order("sent_at", { ascending: false });
-        setGifts((data || []) as GiftRecord[]);
+        const { data } = await configuredSupabase.from("gift_history").select("id, gift_name, sent_at, creator:creator_id(display_name)").eq("supporter_id", profile.id).order("sent_at", { ascending: false });
+        const normalizedGifts = (data || []).map(item => ({ ...item, creator: Array.isArray(item.creator) ? item.creator[0] || null : item.creator })) as unknown as GiftRecord[];
+        setGifts(normalizedGifts);
+        const { data: creator } = await configuredSupabase.from("profiles").select("id, display_name").eq("role", "creator").order("created_at").limit(1).maybeSingle<{ id: string; display_name: string }>();
+        if (creator) {
+          setCreatorName(creator.display_name);
+          const { data: publicWishlist } = await configuredSupabase.from("wishlist_items").select("id, name, price, asin, description, rating, review_count, availability, image_url, item_url").eq("creator_id", creator.id).order("created_at");
+          setCreatorWishlist((publicWishlist || []) as WishlistRecord[]);
+        }
       }
-      const { data: spotifyData } = await supabase.from("spotify_recommendations").select("id, title, detail, spotify_url, cover_url").eq("profile_id", profile.id).order("sort_order");
+      const { data: spotifyData } = await configuredSupabase.from("spotify_recommendations").select("id, title, detail, spotify_url, cover_url").eq("profile_id", profile.id).order("sort_order");
       setRecommendations((spotifyData || []) as SpotifyRecord[]);
       setLoading(false);
     }
     void loadProfile();
-  }, [isCreator]);
+  }, [creatorId, isCreator]);
 
   const saveDetails = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -287,7 +442,7 @@ function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSig
       <nav className="profile-nav">
         <button className="profile-logo" onClick={onBack}><span><SvgIcon name="bow" size={19} filled /></span> BakaBoost</button>
         <div className="profile-nav-links">
-          <button onClick={onExplore}>Explore gifts</button>
+          <button onClick={onExploreGifts}>Explore gifts</button>
           <button className={!isCreator ? "active" : ""} onClick={() => onOpen("user")}>My profile</button>
           <button className={isCreator ? "active" : ""} onClick={() => onOpen("creator")}>Creator profile</button>
         </div>
@@ -314,21 +469,23 @@ function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSig
             <p>{details?.bio || (isCreator ? "Set up your profile to share your work and wishlist." : "Set up your profile to keep track of the creators and gifts that matter to you.")}</p>
             <div className="profile-meta"><span><SvgIcon name="heart" size={13} filled /> {isCreator ? `${wishlist.length} wishlist items` : `${gifts.length} gifts sent`}</span><span><SvgIcon name="gift" size={13} /> {isCreator ? "Wishlist" : "Supporter profile"}</span></div>
           </div>
-          <div className="profile-hero-actions">{!isCreator && <button onClick={onExplore} className="pink-btn profile-primary">Explore creators <span>→</span></button>}{isCreator && <button onClick={connectWithCreator} className="outline-action profile-connect">{connected ? "Connected" : "Connect with me"}</button>}</div>
+          <div className="profile-hero-actions">{!isCreator && <button onClick={onExploreCreators} className="pink-btn profile-primary">Explore creators <span>→</span></button>}{isCreator && isOwner && <button onClick={connectWithCreator} className="outline-action profile-connect">{connected ? "Connected" : "Connect with me"}</button>}</div>
         </section>
 
         <div className="profile-layout">
           <div className="profile-main-column">
             {isCreator ? (
               <section className="profile-section wishlist-section">
-                <div className="profile-section-heading"><div><span className="section-label">A little something</span><h2>My wishlist</h2></div><button onClick={() => setShowWishlistForm(prev => !prev)} className="outline-action">{showWishlistForm ? "Close" : "Add item"} <span>+</span></button></div>
-                {showWishlistForm && <form className="inline-form" onSubmit={addWishlistItem}><input value={wishlistForm.name} onChange={event => setWishlistForm({ ...wishlistForm, name: event.target.value })} placeholder="Gift name" required /><input type="number" min="0" step="0.01" value={wishlistForm.price} onChange={event => setWishlistForm({ ...wishlistForm, price: event.target.value })} placeholder="Price" required /><input value={wishlistForm.image_url} onChange={event => setWishlistForm({ ...wishlistForm, image_url: event.target.value })} placeholder="Image URL (optional)" /><button className="pink-btn" type="submit">Add to wishlist</button></form>}
-                {wishlist.length ? <div className="wishlist-row">{wishlist.map(item => <article className="wishlist-item" key={item.id}><div className="wishlist-art">{item.image_url ? <img src={item.image_url} alt="" /> : <SvgIcon name="gift" size={33} />}</div><div><h3>{item.name}</h3><span>${Number(item.price).toFixed(2)}</span></div></article>)}</div> : <div className="profile-empty-state">No wishlist items yet. Add your first item from creator settings.</div>}
+                <div className="profile-section-heading"><div><span className="section-label">A little something</span><h2>{isOwner ? "My wishlist" : `${details?.name || "Creator"}'s wishlist`}</h2></div>{canEdit && <div className="wishlist-actions"><button onClick={onTopPicks} className="outline-action">Top picked by creators</button></div>}</div>
+                {amazonResults.length > 0 && <div className="amazon-results" aria-label="Amazon search results">{amazonResults.map(product => <article className="amazon-result" key={product.asin} onClick={() => setSelectedProduct(product)}>{product.image_url ? <img src={product.image_url} alt="" /> : <div className="amazon-result-placeholder"><SvgIcon name="gift" size={20} /></div>}<div><strong>{product.title}</strong><span>{product.price}</span></div><button className="outline-action" onClick={event => { event.stopPropagation(); void addAmazonResult(product); }}>Add</button></article>)}</div>}
+                {canEdit && showWishlistForm && <form className="inline-form" onSubmit={addWishlistItem}><input value={wishlistForm.name} onChange={event => setWishlistForm({ ...wishlistForm, name: event.target.value })} placeholder="Gift name" required /><input type="number" min="0" step="0.01" value={wishlistForm.price} onChange={event => setWishlistForm({ ...wishlistForm, price: event.target.value })} placeholder="Price" required /><input value={wishlistForm.item_url} onChange={event => setWishlistForm({ ...wishlistForm, item_url: event.target.value })} placeholder="Amazon/product URL (optional)" type="url" /><input value={wishlistForm.image_url} onChange={event => setWishlistForm({ ...wishlistForm, image_url: event.target.value })} placeholder="Image URL (optional)" type="url" /><button className="pink-btn" type="submit">Add to wishlist</button></form>}
+                {wishlist.length ? <div className="wishlist-row">{wishlist.map(item => <article className="wishlist-item" key={item.id} onClick={() => setSelectedProduct(item)}><div className="wishlist-art">{item.image_url ? <img src={item.image_url} alt="" /> : <SvgIcon name="gift" size={33} />}</div><div><h3>{item.name}</h3><span>{item.price ? `$${Number(item.price).toFixed(2)}` : "Price on Amazon"}</span><button className="wishlist-link" onClick={event => { event.stopPropagation(); if (item.item_url) window.open(item.item_url, "_blank", "noopener,noreferrer"); }}>{isCreator ? "View item" : "Buy on Amazon"} <span>↗</span></button></div></article>)}</div> : <div className="profile-empty-state">No wishlist items yet. Add your first item from creator settings.</div>}
               </section>
             ) : (
               <section className="profile-section activity-section">
                 <div className="profile-section-heading"><div><span className="section-label">Your little acts of kindness</span><h2>Gift activity</h2></div><button onClick={() => notify("Your complete gift history is coming next.")} className="outline-action">See history <span>→</span></button></div>
                 {gifts.length ? gifts.map(item => <div className="activity-row" key={item.id}><div className="activity-icon"><SvgIcon name="gift" size={20} /></div><div><strong>{item.gift_name}</strong><span>Sent to {item.creator?.display_name || "a creator"}</span></div><time>{new Date(item.sent_at).toLocaleDateString()}</time></div>) : <div className="profile-empty-state">No gifts sent yet. Your gift history will appear here.</div>}
+                {creatorWishlist.length > 0 && <div className="supporter-wishlist"><div className="profile-section-heading"><div><span className="section-label">Choose a thoughtful gift</span><h2>{creatorName}'s wishlist</h2></div></div><div className="wishlist-row">{creatorWishlist.map(item => <article className="wishlist-item" key={item.id} onClick={() => setSelectedProduct(item)}><div className="wishlist-art">{item.image_url ? <img src={item.image_url} alt="" /> : <SvgIcon name="gift" size={33} />}</div><div><h3>{item.name}</h3><span>{item.price ? `$${Number(item.price).toFixed(2)}` : "Price on Amazon"}</span><button className="wishlist-link" onClick={event => { event.stopPropagation(); if (item.item_url) window.open(item.item_url, "_blank", "noopener,noreferrer"); }}>Buy on Amazon <span>↗</span></button></div></article>)}</div></div>}
               </section>
             )}
 
@@ -339,12 +496,15 @@ function ProfilePage({ view, onBack, onOpen, onExplore, onCart, cartCount, onSig
             <section className="profile-section spotify-section">
               <div className="spotify-heading"><div className="spotify-mark">●</div><div><span className="section-label">Optional profile add-on</span><h2>Spotify picks</h2></div><div className="spotify-actions"><button className="outline-action" onClick={() => setShowSpotifyForm(prev => !prev)}>{showSpotifyForm ? "Close" : "Add pick"}</button><button className={`toggle ${spotifyEnabled ? "on" : ""}`} aria-label="Toggle Spotify recommendations" onClick={() => setSpotifyEnabled(!spotifyEnabled)}><span /></button></div></div>
               {showSpotifyForm && <form className="inline-form spotify-form" onSubmit={addSpotifyRecommendation}><input value={spotifyForm.title} onChange={event => setSpotifyForm({ ...spotifyForm, title: event.target.value })} placeholder="Song or playlist" required /><input value={spotifyForm.detail} onChange={event => setSpotifyForm({ ...spotifyForm, detail: event.target.value })} placeholder="Why you love it" /><input type="url" value={spotifyForm.spotify_url} onChange={event => setSpotifyForm({ ...spotifyForm, spotify_url: event.target.value })} placeholder="Spotify URL" required /><button className="pink-btn" type="submit">Save pick</button></form>}
-              {spotifyEnabled ? recommendations.length ? <><p className="spotify-intro">{isCreator ? "What I listen to while I draw, stream, and dream up new things." : "A few songs that have been keeping me company lately."}</p><div className="playlist-list">{recommendations.map((playlist, index) => <div className="playlist-row" key={playlist.id}><span className="playlist-cover" style={{ background: "#f8d5df" }}>{index + 1}</span><span><strong>{playlist.title}</strong><small>{playlist.detail}</small></span><button onClick={() => window.open(playlist.spotify_url, "_blank", "noopener,noreferrer")} aria-label={`Open ${playlist.title}`}>▶</button></div>)}</div><a className="spotify-link" href="https://open.spotify.com" target="_blank" rel="noreferrer">Open Spotify <span>↗</span></a></> : <div className="spotify-off">No Spotify recommendations have been added yet.</div> : <div className="spotify-off">Spotify recommendations are hidden from your profile.</div>}
+              <form className="spotify-search-form" onSubmit={searchSpotify}><input value={spotifyQuery} onChange={event => setSpotifyQuery(event.target.value)} placeholder="Search Spotify songs or playlists" /><button className="outline-action" type="submit" disabled={spotifySearching}>{spotifySearching ? "Searching..." : "Search"}</button></form>
+              {spotifyResults.length > 0 && <div className="spotify-search-results">{spotifyResults.map(result => <article className="spotify-search-result" key={result.id}><div className="spotify-result-cover">{result.cover_url ? <img src={result.cover_url} alt="" /> : <SvgIcon name="music" size={18} />}</div><div><strong>{result.title}</strong><span>{result.kind} · {result.detail}</span></div><button className="outline-action" onClick={() => void addSpotifyResult(result)}>Add</button></article>)}</div>}
+              {spotifyEnabled ? recommendations.length ? <><p className="spotify-intro">{isCreator ? "What I listen to while I draw, stream, and dream up new things." : "A few songs that have been keeping me company lately."}</p><div className="playlist-list">{recommendations.map((playlist, index) => <div className="playlist-row" key={playlist.id}><span className="playlist-cover" style={{ background: "#f8d5df" }}>{index + 1}</span><span><strong>{playlist.title}</strong><small>{playlist.detail}</small></span><button onClick={() => window.open(playlist.spotify_url, "_blank", "noopener,noreferrer")} aria-label={`Open ${playlist.title}`}>▶</button></div>)}</div><div className="spotify-embeds">{recommendations.map(playlist => { const embedUrl = spotifyEmbedUrl(playlist.spotify_url); return embedUrl ? <iframe key={playlist.id} title={`Play ${playlist.title}`} src={embedUrl} loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" /> : null; })}</div><a className="spotify-link" href="https://open.spotify.com" target="_blank" rel="noreferrer">Open Spotify <span>↗</span></a></> : <div className="spotify-off">No Spotify recommendations have been added yet.</div> : <div className="spotify-off">Spotify recommendations are hidden from your profile.</div>}
             </section>
             <section className="profile-section profile-stats"><div><strong>{isCreator ? wishlist.length : gifts.length}</strong><span>{isCreator ? "wishlist items" : "gifts sent"}</span></div><div><strong>{recommendations.length}</strong><span>Spotify picks</span></div></section>
           </aside>
         </div>
       </main>
+      {selectedProduct && <div className="product-modal-backdrop" role="presentation" onClick={() => setSelectedProduct(null)}><section className="product-modal" role="dialog" aria-modal="true" aria-label="Product details" onClick={event => event.stopPropagation()}><button className="product-modal-close" onClick={() => setSelectedProduct(null)} aria-label="Close product preview">×</button><div className="product-modal-image">{selectedProduct.image_url ? <img src={selectedProduct.image_url} alt="" /> : <SvgIcon name="gift" size={42} />}</div><div className="product-modal-copy"><span className="section-label">Amazon product preview</span><h2>{selectedProduct.name || (selectedProduct as AmazonSearchResult).title}</h2><div className="product-modal-price-row"><strong className="product-modal-price">{"price" in selectedProduct && selectedProduct.price ? typeof selectedProduct.price === "number" ? `$${selectedProduct.price.toFixed(2)}` : selectedProduct.price : "Price on Amazon"}</strong><span className="product-modal-source">Amazon listing</span></div><div className="product-modal-meta"><span><b>Rating</b>{selectedProduct.rating || "Not rated"}</span><span><b>Reviews</b>{selectedProduct.review_count || "No reviews yet"}</span><span><b>Availability</b>{selectedProduct.availability || "Check on Amazon"}</span></div><div className="product-modal-detail"><h3>About this product</h3><p>{selectedProduct.description || "Product details are available on the Amazon listing."}</p></div><div className="product-modal-actions">{canEdit && "title" in selectedProduct && <button className="pink-btn" onClick={() => void addAmazonResult(selectedProduct as AmazonSearchResult)}>Add to my wishlist <span>+</span></button>}{!isOwner && selectedProduct.item_url && <button className="pink-btn" onClick={() => onAddToCart({ id: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price ? `$${Number(selectedProduct.price).toFixed(2)}` : "Price on Amazon", img: selectedProduct.image_url, brand: "Amazon", item_url: selectedProduct.item_url })}>Add to bag <span>+</span></button>}{selectedProduct.item_url && <a className="outline-action" href={selectedProduct.item_url} target="_blank" rel="noreferrer">View on Amazon <span>↗</span></a>}</div><small className="product-modal-footnote">Price and availability can change on Amazon.</small></div></section></div>}
       {notice && <div className="site-toast profile-toast" role="status"><SvgIcon name="check" size={15} /> {notice}</div>}
     </div>
   );
@@ -354,6 +514,7 @@ export default function App() {
   const [authMode, setAuthMode] = useState<"signin" | "signup" | null>(null);
   const [setupRole, setSetupRole] = useState<ProfileView | "choose" | null>(null);
   const [profileView, setProfileView] = useState<ProfileView | null>(null);
+  const [creatorProfileId, setCreatorProfileId] = useState<string | undefined>();
   const [authChecking, setAuthChecking] = useState(true);
   const [liked, setLiked]     = useState<Set<number>>(new Set());
   const [email, setEmail]     = useState("");
@@ -369,19 +530,28 @@ export default function App() {
       return [];
     }
   });
-  const [utilityPage, setUtilityPage] = useState<UtilityPage>(() => window.location.hash === "#cart" ? "cart" : window.location.hash === "#blog" ? "blog" : window.location.hash === "#explore" ? "explore" : null);
+  const [utilityPage, setUtilityPage] = useState<UtilityPage>(() => window.location.hash === "#cart" ? "cart" : window.location.hash === "#blog" ? "blog" : window.location.hash === "#explore" ? "explore" : window.location.hash === "#creators" ? "creators" : window.location.hash === "#top-picks" ? "top-picks" : null);
+
+  useEffect(() => {
+    const currentIndex = Number(window.history.state?.bakaboostIndex);
+    const index = Number.isFinite(currentIndex) ? currentIndex : 0;
+    window.history.replaceState({ ...(window.history.state || {}), bakaboostIndex: index }, "", window.location.href);
+    sessionStorage.setItem("bakaboost-history-length", String(index + 1));
+    window.dispatchEvent(new Event("bakaboost:navigation"));
+  }, []);
 
   useEffect(() => {
     if (!supabase) { setAuthChecking(false); return; }
+    const configuredSupabase = supabase;
     let mounted = true;
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await configuredSupabase.auth.getSession();
       if (!mounted) return;
       setIsAuthenticated(Boolean(session));
       setAuthChecking(false);
     };
     void checkSession();
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: listener } = configuredSupabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(Boolean(session));
       if (event === "SIGNED_IN" && session?.user && !authMode && !profileView && !setupRole) setSetupRole("choose");
     });
@@ -393,14 +563,20 @@ export default function App() {
   }, [cartItems]);
 
   useEffect(() => {
-    const syncRoute = () => setUtilityPage(window.location.hash === "#cart" ? "cart" : window.location.hash === "#blog" ? "blog" : window.location.hash === "#explore" ? "explore" : null);
+    const syncRoute = () => {
+      const hash = window.location.hash;
+      setUtilityPage(hash === "#cart" ? "cart" : hash === "#blog" ? "blog" : hash === "#explore" ? "explore" : hash === "#creators" ? "creators" : hash === "#top-picks" ? "top-picks" : null);
+      if (hash === "#creator-profile" || hash === "#user-profile") { setProfileView(hash === "#creator-profile" ? "creator" : "user"); setCreatorProfileId(undefined); }
+      else if (hash.startsWith("#creator-") && hash !== "#creator-profile") { setProfileView("creator"); setCreatorProfileId(hash.slice("#creator-".length)); }
+      else if (!hash.includes("profile")) { setProfileView(null); setCreatorProfileId(undefined); setSetupRole(null); }
+    };
     window.addEventListener("hashchange", syncRoute);
     window.addEventListener("popstate", syncRoute);
     return () => { window.removeEventListener("hashchange", syncRoute); window.removeEventListener("popstate", syncRoute); };
   }, []);
 
   useEffect(() => {
-    document.title = utilityPage === "cart" ? "Your Gift Bag | BakaBoost" : utilityPage === "blog" ? "Journal | BakaBoost" : utilityPage === "explore" ? "Explore Gifts | BakaBoost" : "BakaBoost";
+    document.title = utilityPage === "cart" ? "Your Gift Bag | BakaBoost" : utilityPage === "blog" ? "Journal | BakaBoost" : utilityPage === "explore" ? "Explore Gifts | BakaBoost" : utilityPage === "creators" ? "Find Creators | BakaBoost" : "BakaBoost";
   }, [utilityPage]);
 
   const notify = (message: string) => {
@@ -417,15 +593,33 @@ export default function App() {
     notify(`${gift.name} added to your bag.`);
   };
 
-  const updateCart = (id: number, delta: number) => setCartItems(prev => prev.flatMap(item => item.gift.id === id ? [{ ...item, quantity: item.quantity + delta }].filter(next => next.quantity > 0) : [item]));
+  const addProductToCart = (product: CartProduct) => {
+    setCartItems(prev => {
+      const existing = prev.find(item => item.gift.id === product.id);
+      if (existing) return prev.map(item => item.gift.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      return [...prev, { gift: product, quantity: 1 }];
+    });
+    notify(`${product.name} added to your bag.`);
+  };
+
+  const updateCart = (id: string | number, delta: number) => setCartItems(prev => prev.flatMap(item => item.gift.id === id ? [{ ...item, quantity: item.quantity + delta }].filter(next => next.quantity > 0) : [item]));
   const navigateUtility = (page: UtilityPage) => {
     const hash = page ? `#${page}` : "#home";
-    window.history.pushState({}, "", hash);
+    const currentIndex = Number(window.history.state?.bakaboostIndex || 0);
+    const nextIndex = currentIndex + 1;
+    window.history.pushState({ bakaboostIndex: nextIndex }, "", hash);
+    sessionStorage.setItem("bakaboost-history-length", String(nextIndex + 1));
+    window.dispatchEvent(new Event("bakaboost:navigation"));
+    setProfileView(null);
+    setSetupRole(null);
+    setCreatorProfileId(undefined);
     setUtilityPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const openProfile = (view: ProfileView) => { setUtilityPage(null); setProfileView(view); window.history.pushState({}, "", `#${view}-profile`); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const pushAppRoute = (hash: string) => { const currentIndex = Number(window.history.state?.bakaboostIndex || 0); const nextIndex = currentIndex + 1; window.history.pushState({ bakaboostIndex: nextIndex }, "", hash); sessionStorage.setItem("bakaboost-history-length", String(nextIndex + 1)); window.dispatchEvent(new Event("bakaboost:navigation")); };
+  const openProfile = (view: ProfileView) => { setUtilityPage(null); setSetupRole(null); setCreatorProfileId(undefined); setProfileView(view); pushAppRoute(`#${view}-profile`); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const openCreator = (id: string) => { setUtilityPage(null); setSetupRole(null); setProfileView("creator"); setCreatorProfileId(id); pushAppRoute(`#creator-${id}`); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const signOut = async () => { if (supabase) await supabase.auth.signOut(); setIsAuthenticated(false); setProfileView(null); setSetupRole(null); navigateUtility(null); };
   const toggleLike = (id:number) => {
     setLiked(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
@@ -433,28 +627,37 @@ export default function App() {
 
   if (authChecking) return <div className="app-loading">Loading BakaBoost...</div>;
 
+  const browserControls = <BrowserNavigation />;
+
   if (authMode) {
     return <AuthPage mode={authMode} onBack={() => setAuthMode(null)} onSwitch={() => setAuthMode(authMode === "signin" ? "signup" : "signin")} onAuthenticated={() => { setAuthMode(null); setSetupRole("choose"); }} />;
   }
   if (setupRole) {
     if (setupRole === "choose") return <RoleSetup onChoose={setSetupRole} />;
-    return <ProfilePage view={setupRole} onBack={() => navigateUtility(null)} onOpen={openProfile} onExplore={() => navigateUtility("explore")} onCart={() => navigateUtility("cart")} cartCount={cartCount} onSignOut={signOut} />;
+    return <><ProfilePage view={setupRole} onBack={() => navigateUtility(null)} onOpen={openProfile} onExploreGifts={() => navigateUtility("explore")} onExploreCreators={() => navigateUtility("creators")} onTopPicks={() => navigateUtility("top-picks")} onCart={() => navigateUtility("cart")} onAddToCart={addProductToCart} cartCount={cartCount} onSignOut={signOut} />{browserControls}</>;
   }
   if (profileView) {
-    return <ProfilePage view={profileView} onBack={() => navigateUtility(null)} onOpen={openProfile} onExplore={() => navigateUtility("explore")} onCart={() => navigateUtility("cart")} cartCount={cartCount} onSignOut={signOut} />;
+    return <><ProfilePage view={profileView} creatorId={creatorProfileId} onBack={() => navigateUtility("creators")} onOpen={openProfile} onExploreGifts={() => navigateUtility("explore")} onExploreCreators={() => navigateUtility("creators")} onTopPicks={() => navigateUtility("top-picks")} onCart={() => navigateUtility("cart")} onAddToCart={addProductToCart} cartCount={cartCount} onSignOut={signOut} />{browserControls}</>;
   }
   if (utilityPage === "cart") {
-    return <CartPage items={cartItems} onBack={() => navigateUtility(null)} onUpdate={updateCart} onRemove={id => setCartItems(prev => prev.filter(item => item.gift.id !== id))} onCheckout={() => notify("Checkout is coming soon.")} />;
+    return <><CartPage items={cartItems} onBack={() => navigateUtility(null)} onUpdate={updateCart} onRemove={id => setCartItems(prev => prev.filter(item => item.gift.id !== id))} onCheckout={() => notify("Checkout is coming soon.")} />{browserControls}</>;
   }
   if (utilityPage === "blog") {
-    return <BlogPage onBack={() => navigateUtility(null)} />;
+    return <><BlogPage onBack={() => navigateUtility(null)} />{browserControls}</>;
   }
   if (utilityPage === "explore") {
-    return <ExplorePage liked={liked} cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} onToggleLike={toggleLike} onAddToCart={addToCart} onOpenCart={() => navigateUtility("cart")} onBack={() => navigateUtility(null)} />;
+    return <><ExplorePage liked={liked} cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} onToggleLike={toggleLike} onAddToCart={addToCart} onOpenCart={() => navigateUtility("cart")} onBack={() => navigateUtility(null)} />{browserControls}</>;
+  }
+  if (utilityPage === "creators") {
+    return <CreatorDirectoryPage onBack={() => navigateUtility(null)} onView={openCreator} />;
+  }
+  if (utilityPage === "top-picks") {
+    return <><AmazonSelectionPage onBack={() => openProfile("creator")} />{browserControls}</>;
   }
 
   return (
-    <div style={{ fontFamily:"'Nunito',sans-serif", background:C.bg, color:C.text, minHeight:"100vh" }}>
+    <div style={{ fontFamily:"'Josefin Sans',sans-serif", background:C.bg, color:C.text, minHeight:"100vh" }}>
+      {browserControls}
 
       {/* ══ NAVBAR ══ */}
       <nav style={{ background:"#ffffff", borderBottom:"1px solid #f1edf0", position:"sticky", top:0, zIndex:50 }}>
@@ -475,15 +678,15 @@ export default function App() {
               style={{
                 width:"100%", paddingLeft:34, paddingRight:14, paddingTop:7, paddingBottom:7,
                 borderRadius:999, border:"1px solid #e8e5e7", background:"#ffffff",
-                fontSize:13, fontFamily:"'Nunito',sans-serif", color:C.text, outline:"none",
+                fontSize:13, fontFamily:"'Josefin Sans',sans-serif", color:C.text, outline:"none",
               }}
             />
           </div>
 
           {/* Links */}
           <div className="nav-links" style={{ display:"flex", gap:26, alignItems:"center", marginLeft:"auto" }}>
-              {['Explore','For creators','How it works','Blog'].map(l=>(
-                <a key={l} href={l === "Explore" ? "#explore" : l === "For creators" ? "#creator-profile" : l === "How it works" ? "#how-it-works" : "#blog"} className="nav-link" onClick={(event) => { if (l === "Explore") { event.preventDefault(); navigateUtility("explore"); } else if (l === "For creators") { event.preventDefault(); setProfileView("creator"); } else if (l === "How it works") { event.preventDefault(); document.querySelector('#how-it-works')?.scrollIntoView({ behavior:"smooth", block:"start" }); } else if (l === "Blog") { event.preventDefault(); navigateUtility("blog"); } }}>{l}</a>
+              {['Explore','For creators','Top picks','How it works','Blog'].map(l=>(
+                <a key={l} href={l === "Explore" ? "#explore" : l === "For creators" ? "#creators" : l === "Top picks" ? "#top-picks" : l === "How it works" ? "#how-it-works" : "#blog"} className={`nav-link${l === "Top picks" ? " nav-link-featured" : ""}`} onClick={(event) => { if (l === "Explore") { event.preventDefault(); navigateUtility("explore"); } else if (l === "For creators") { event.preventDefault(); navigateUtility("creators"); } else if (l === "Top picks") { event.preventDefault(); navigateUtility("top-picks"); } else if (l === "How it works") { event.preventDefault(); document.querySelector('#how-it-works')?.scrollIntoView({ behavior:"smooth", block:"start" }); } else if (l === "Blog") { event.preventDefault(); navigateUtility("blog"); } }}>{l === "Top picks" && <SvgIcon name="gift" size={12} />}{l}</a>
             ))}
           </div>
 
@@ -711,7 +914,7 @@ export default function App() {
                   onChange={e=>setEmail(e.target.value)}
                   style={{
                     padding:"10px 18px", borderRadius:999, border:`1px solid ${C.border}`,
-                    fontSize:14, fontFamily:"'Nunito',sans-serif",
+                    fontSize:14, fontFamily:"'Josefin Sans',sans-serif",
                     outline:"none", width:230, color:C.pinkDark,
                     background:"#ffffff",
                   }}

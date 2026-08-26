@@ -105,3 +105,31 @@ vite.config.ts        Vite configuration
 - Use only the Supabase publishable/anon key in the frontend.
 - Never commit `.env`, service-role keys, OAuth secrets, or Apple `.p8` files.
 - Row Level Security policies in `supabase-schema.sql` restrict profile ownership, wishlist management, recommendations, and gift history access.
+
+## Amazon creator search
+
+The creator wishlist includes an Amazon search powered by the `amazon-search` Supabase Edge Function. Configure the function secrets; never put these values in `.env` or a `VITE_` variable:
+
+```bash
+supabase functions deploy amazon-search
+supabase secrets set RAPIDAPI_KEY=your_rapidapi_key RAPIDAPI_AMAZON_HOST=real-time-amazon-data.p.rapidapi.com
+```
+
+The default provider URL is `https://real-time-amazon-data.p.rapidapi.com/search`. If your RapidAPI subscription uses another Amazon provider, set its search endpoint too:
+
+```bash
+supabase secrets set RAPIDAPI_AMAZON_SEARCH_URL=https://your-provider.p.rapidapi.com/search
+```
+
+The function accepts `POST { "query": "wireless headphones", "country": "US" }` and returns normalized products. The frontend calls it with `supabase.functions.invoke("amazon-search")`, then saves the selected result through the authenticated `wishlist_items` insert and its existing RLS policy.
+
+## Spotify creator search
+
+Deploy the Spotify search function and store the Spotify app credentials as Supabase secrets:
+
+```bash
+supabase functions deploy spotify-search
+supabase secrets set SPOTIFY_CLIENT_ID=your_client_id SPOTIFY_CLIENT_SECRET=your_client_secret
+```
+
+Creators can search tracks and playlists in their profile, add a result to Spotify picks, and play valid tracks, albums, playlists, artists, shows, or episodes through Spotify's official embed player. The client never receives the Spotify client secret.

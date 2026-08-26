@@ -16,9 +16,22 @@ create table if not exists public.wishlist_items (
   creator_id uuid not null references public.profiles(id) on delete cascade,
   name text not null,
   price numeric(10,2) not null check (price >= 0),
+  asin text,
+  description text not null default '',
+  rating text not null default '',
+  review_count text not null default '',
+  availability text not null default '',
   image_url text,
+  item_url text,
   created_at timestamptz not null default now()
 );
+
+alter table public.wishlist_items add column if not exists item_url text;
+alter table public.wishlist_items add column if not exists asin text;
+alter table public.wishlist_items add column if not exists description text not null default '';
+alter table public.wishlist_items add column if not exists rating text not null default '';
+alter table public.wishlist_items add column if not exists review_count text not null default '';
+alter table public.wishlist_items add column if not exists availability text not null default '';
 
 create table if not exists public.spotify_recommendations (
   id uuid primary key default gen_random_uuid(),
