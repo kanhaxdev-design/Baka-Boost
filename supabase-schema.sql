@@ -53,10 +53,21 @@ create table if not exists public.gift_history (
   sent_at timestamptz not null default now()
 );
 
+create table if not exists public.gift_intents (
+  id uuid primary key default gen_random_uuid(),
+  supporter_id uuid not null references public.profiles(id) on delete cascade,
+  creator_id uuid not null references public.profiles(id) on delete cascade,
+  wishlist_item_id uuid references public.wishlist_items(id) on delete set null,
+  product_url text not null,
+  status text not null default 'pending' check (status in ('pending', 'completed', 'cancelled')),
+  created_at timestamptz not null default now()
+);
+
 alter table public.profiles enable row level security;
 alter table public.wishlist_items enable row level security;
 alter table public.spotify_recommendations enable row level security;
 alter table public.gift_history enable row level security;
+alter table public.gift_intents enable row level security;
 
 drop policy if exists "profiles are publicly readable" on public.profiles;
 drop policy if exists "users create their own profile" on public.profiles;
@@ -68,6 +79,9 @@ drop policy if exists "profile owners manage recommendations" on public.spotify_
 drop policy if exists "supporters read their own history" on public.gift_history;
 drop policy if exists "creators read gifts sent to them" on public.gift_history;
 drop policy if exists "supporters send gifts as themselves" on public.gift_history;
+drop policy if exists "supporters create gift intents" on public.gift_intents;
+drop policy if exists "supporters read their gift intents" on public.gift_intents;
+drop policy if exists "creators read gift intents" on public.gift_intents;
 
 create policy "profiles are publicly readable" on public.profiles for select using (true);
 create policy "users create their own profile" on public.profiles for insert with check (auth.uid() = id);
@@ -79,8 +93,13 @@ create policy "profile owners manage recommendations" on public.spotify_recommen
 create policy "supporters read their own history" on public.gift_history for select using (auth.uid() = supporter_id);
 create policy "creators read gifts sent to them" on public.gift_history for select using (auth.uid() = creator_id);
 create policy "supporters send gifts as themselves" on public.gift_history for insert with check (auth.uid() = supporter_id);
+create policy "supporters create gift intents" on public.gift_intents for insert with check (auth.uid() = supporter_id);
+create policy "supporters read their gift intents" on public.gift_intents for select using (auth.uid() = supporter_id);
+create policy "creators read gift intents" on public.gift_intents for select using (auth.uid() = creator_id);
 
 create index if not exists wishlist_creator_id_idx on public.wishlist_items(creator_id);
 create index if not exists spotify_profile_id_idx on public.spotify_recommendations(profile_id);
 create index if not exists gift_supporter_id_idx on public.gift_history(supporter_id);
 create index if not exists gift_creator_id_idx on public.gift_history(creator_id);
+create index if not exists gift_intents_supporter_id_idx on public.gift_intents(supporter_id);
+create index if not exists gift_intents_creator_id_idx on public.gift_intents(creator_id);
