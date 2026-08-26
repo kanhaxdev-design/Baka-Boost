@@ -168,12 +168,13 @@ function CreatorDirectoryPage({ onBack, onView }: { onBack: () => void; onView: 
   const [query, setQuery] = useState("");
   const [creators, setCreators] = useState<CreatorRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
-    void supabase.from("profiles").select("id, display_name, username, bio").eq("role", "creator").order("created_at").then(({ data }) => { setCreators((data || []) as CreatorRecord[]); setLoading(false); });
+    void supabase.from("profiles").select("id, display_name, username, bio").eq("role", "creator").order("created_at").then(({ data, error: loadError }) => { if (loadError) setError(loadError.message); else setCreators((data || []) as CreatorRecord[]); setLoading(false); });
   }, []);
   const visible = creators.filter(creator => `${creator.display_name} ${creator.username} ${creator.bio}`.toLowerCase().includes(query.toLowerCase()));
-  return <main className="utility-page creator-directory"><div className="utility-nav"><div className="utility-nav-start"><BrowserNavigation /><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button></div><button className="utility-back" onClick={onBack}>Back home <span>↗</span></button></div><div className="directory-shell"><header className="directory-heading"><span className="section-label">Find someone to support</span><h1>Top picked by creators <SvgIcon name="heart" size={27} filled /></h1><p>Browse real creator wishlists and choose a thoughtful gift.</p></header><label className="directory-search"><SvgIcon name="search" size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search creators by name or username" /></label>{loading ? <div className="profile-loading">Finding creators...</div> : visible.length ? <div className="creator-grid">{visible.map(creator => <button className="creator-card" key={creator.id} onClick={() => onView(creator.id)}><span className="creator-avatar">{creator.display_name.charAt(0).toUpperCase()}</span><span><strong>{creator.display_name}</strong><small>@{creator.username}</small><p>{creator.bio || "See this creator's curated wishlist."}</p></span><b>View wishlist <span>→</span></b></button>)}</div> : <div className="explore-empty"><SvgIcon name="search" size={28} /><h2>No creators found</h2><p>Try another name or username.</p></div>}</div></main>;
+  return <main className="utility-page creator-directory"><div className="utility-nav"><div className="utility-nav-start"><BrowserNavigation /><button className="brand-home utility-brand" onClick={onBack}><span className="brand-mark"><SvgIcon name="bow" size={20} filled /></span><strong>BakaBoost</strong></button></div><button className="utility-back" onClick={onBack}>Back home <span>↗</span></button></div><div className="directory-shell"><header className="directory-heading"><span className="section-label">Find someone to support</span><h1>Top picked by creators <SvgIcon name="heart" size={27} filled /></h1><p>Browse real creator wishlists and choose a thoughtful gift.</p></header><label className="directory-search"><SvgIcon name="search" size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search creators by name or username" /></label>{loading ? <div className="profile-loading">Finding creators...</div> : error ? <div className="profile-empty-state">Could not load creators: {error}</div> : visible.length ? <div className="creator-grid">{visible.map(creator => <button className="creator-card" key={creator.id} onClick={() => onView(creator.id)}><span className="creator-avatar">{creator.display_name.charAt(0).toUpperCase()}</span><span><strong>{creator.display_name}</strong><small>@{creator.username}</small><p>{creator.bio || "See this creator's curated wishlist."}</p></span><b>View wishlist <span>→</span></b></button>)}</div> : <div className="explore-empty"><SvgIcon name="search" size={28} /><h2>No creators found</h2><p>Try another name or username.</p></div>}</div></main>;
 }
 
 function AmazonSelectionPage({ onBack }: { onBack: () => void }) {
@@ -287,6 +288,7 @@ function ProfilePage({ view, creatorId, onBack, onOpen, onExploreGifts, onExplor
   const [wishlist, setWishlist] = useState<WishlistRecord[]>([]);
   const [creatorWishlist, setCreatorWishlist] = useState<WishlistRecord[]>([]);
   const [creatorName, setCreatorName] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [recommendations, setRecommendations] = useState<SpotifyRecord[]>([]);
   const [gifts, setGifts] = useState<GiftRecord[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -393,19 +395,29 @@ function ProfilePage({ view, creatorId, onBack, onOpen, onExploreGifts, onExplor
     notify(connected ? "Creator removed from your connections." : "Creator added to your connections.");
   };
 
+  const toggleSpotify = async () => {
+    const nextValue = !spotifyEnabled;
+    setSpotifyEnabled(nextValue);
+    if (!supabase || !profileId || !isOwner) return;
+    const { error } = await supabase.from("profiles").update({ spotify_enabled: nextValue }).eq("id", profileId);
+    if (error) { setSpotifyEnabled(!nextValue); notify(error.message); }
+  };
+
   useEffect(() => {
     async function loadProfile() {
       setLoading(true);
       if (!supabase) { setLoading(false); return; }
       const configuredSupabase = supabase;
-      const { data: { user } } = await configuredSupabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
       const profileQuery = configuredSupabase.from("profiles").select("id, role, display_name, username, bio, spotify_enabled").eq("role", view);
-      const { data: profile } = await (creatorId ? profileQuery.eq("id", creatorId) : profileQuery.eq("id", user.id)).maybeSingle<ProfileRecord>();
+      const { data: { user } } = await configuredSupabase.auth.getUser();
+      if (!creatorId && !user) { setLoading(false); return; }
+      const { data: profile, error: profileError } = await (creatorId ? profileQuery.eq("id", creatorId) : profileQuery.eq("id", user?.id || "")).maybeSingle<ProfileRecord>();
+      if (profileError) { setLoadError(profileError.message); setLoading(false); return; }
       if (!profile) { setLoading(false); return; }
       setProfileId(profile.id); setSpotifyEnabled(profile.spotify_enabled); setDetails({ name: profile.display_name, username: profile.username, bio: profile.bio }); setForm({ name: profile.display_name, username: profile.username, bio: profile.bio });
       if (view === "creator") {
-        const { data } = await configuredSupabase.from("wishlist_items").select("id, name, price, asin, description, rating, review_count, availability, image_url, item_url").eq("creator_id", profile.id).order("created_at");
+        const { data, error: wishlistError } = await configuredSupabase.from("wishlist_items").select("id, name, price, asin, description, rating, review_count, availability, image_url, item_url").eq("creator_id", profile.id).order("created_at");
+        if (wishlistError) setLoadError(wishlistError.message);
         setWishlist((data || []) as WishlistRecord[]);
       } else {
         const { data } = await configuredSupabase.from("gift_history").select("id, gift_name, sent_at, creator:creator_id(display_name)").eq("supporter_id", profile.id).order("sent_at", { ascending: false });
@@ -451,6 +463,7 @@ function ProfilePage({ view, creatorId, onBack, onOpen, onExploreGifts, onExplor
 
       <main className="profile-shell">
         {loading && <div className="profile-loading">Loading your profile...</div>}
+        {!loading && loadError && <div className="profile-empty-banner">Could not load this profile: {loadError}</div>}
         {!loading && !hasSupabaseConfig && <div className="profile-empty-banner">Supabase is not configured. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to load profile data.</div>}
         {!details && <section className="profile-section details-setup">
           <div className="setup-copy"><span className="section-label">One small step</span><h2>{isCreator ? "Set up your creator profile" : "Tell us a little about you"}</h2><p>{isCreator ? "Add your public details so supporters know who they are cheering on." : "Your details personalize your supporter profile and stay saved for your next visit."}</p></div>
@@ -494,7 +507,7 @@ function ProfilePage({ view, creatorId, onBack, onOpen, onExploreGifts, onExplor
 
           <aside className="profile-side-column">
             <section className="profile-section spotify-section">
-              <div className="spotify-heading"><div className="spotify-mark">●</div><div><span className="section-label">Optional profile add-on</span><h2>Spotify picks</h2></div><div className="spotify-actions"><button className="outline-action" onClick={() => setShowSpotifyForm(prev => !prev)}>{showSpotifyForm ? "Close" : "Add pick"}</button><button className={`toggle ${spotifyEnabled ? "on" : ""}`} aria-label="Toggle Spotify recommendations" onClick={() => setSpotifyEnabled(!spotifyEnabled)}><span /></button></div></div>
+              <div className="spotify-heading"><div className="spotify-mark">●</div><div><span className="section-label">Optional profile add-on</span><h2>Spotify picks</h2></div><div className="spotify-actions">{isOwner && <button className="outline-action" onClick={() => setShowSpotifyForm(prev => !prev)}>{showSpotifyForm ? "Close" : "Add pick"}</button>}{isOwner && <button className={`toggle ${spotifyEnabled ? "on" : ""}`} aria-label="Toggle Spotify recommendations" onClick={() => void toggleSpotify()}><span /></button>}</div></div>
               {showSpotifyForm && <form className="inline-form spotify-form" onSubmit={addSpotifyRecommendation}><input value={spotifyForm.title} onChange={event => setSpotifyForm({ ...spotifyForm, title: event.target.value })} placeholder="Song or playlist" required /><input value={spotifyForm.detail} onChange={event => setSpotifyForm({ ...spotifyForm, detail: event.target.value })} placeholder="Why you love it" /><input type="url" value={spotifyForm.spotify_url} onChange={event => setSpotifyForm({ ...spotifyForm, spotify_url: event.target.value })} placeholder="Spotify URL" required /><button className="pink-btn" type="submit">Save pick</button></form>}
               <form className="spotify-search-form" onSubmit={searchSpotify}><input value={spotifyQuery} onChange={event => setSpotifyQuery(event.target.value)} placeholder="Search Spotify songs or playlists" /><button className="outline-action" type="submit" disabled={spotifySearching}>{spotifySearching ? "Searching..." : "Search"}</button></form>
               {spotifyResults.length > 0 && <div className="spotify-search-results">{spotifyResults.map(result => <article className="spotify-search-result" key={result.id}><div className="spotify-result-cover">{result.cover_url ? <img src={result.cover_url} alt="" /> : <SvgIcon name="music" size={18} />}</div><div><strong>{result.title}</strong><span>{result.kind} · {result.detail}</span></div><button className="outline-action" onClick={() => void addSpotifyResult(result)}>Add</button></article>)}</div>}
