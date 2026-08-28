@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "http://localhost:8444",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
@@ -11,11 +12,15 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 
 async function getAccessToken(clientId: string, clientSecret: string) {
   const credentials = btoa(`${clientId}:${clientSecret}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
   const response = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { Authorization: `Basic ${credentials}`, "Content-Type": "application/x-www-form-urlencoded" },
     body: "grant_type=client_credentials",
+    signal: controller.signal,
   });
+  clearTimeout(timeout);
   if (!response.ok) throw new Error("Spotify authentication failed.");
   const data = await response.json() as { access_token?: string };
   if (!data.access_token) throw new Error("Spotify did not return an access token.");
@@ -25,6 +30,14 @@ async function getAccessToken(clientId: string, clientSecret: string) {
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return json({ error: "Use POST." }, 405);
+
+  const authorization = request.headers.get("Authorization");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!authorization || !supabaseUrl || !supabaseAnonKey) return json({ error: "Authentication is required." }, 401);
+  const client = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: authorization } } });
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) return json({ error: "Authentication is required." }, 401);
 
   const clientId = Deno.env.get("SPOTIFY_CLIENT_ID");
   const clientSecret = Deno.env.get("SPOTIFY_CLIENT_SECRET");
@@ -40,7 +53,10 @@ Deno.serve(async (request) => {
     url.searchParams.set("q", query);
     url.searchParams.set("type", type);
     url.searchParams.set("limit", "10");
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal });
+    clearTimeout(timeout);
     if (!response.ok) return json({ error: `Spotify returned ${response.status}.` }, 502);
     const payload = await response.json() as { tracks?: { items?: Array<Record<string, unknown>> }; playlists?: { items?: Array<Record<string, unknown>> } };
     const tracks = (payload.tracks?.items || []).map(track => {

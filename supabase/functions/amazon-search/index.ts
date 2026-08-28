@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "http://localhost:8444",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
@@ -27,17 +27,26 @@ function firstString(...values: unknown[]) {
   return values.find((value): value is string => typeof value === "string" && value.trim().length > 0)?.trim() || "";
 }
 
+function firstValue(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+    if (typeof value === "string" && value.trim().length > 0) return value.trim();
+  }
+  return "";
+}
+
 function normalizeProduct(raw: Record<string, unknown>): AmazonProduct | null {
   const asin = firstString(raw.asin, raw.ASIN, raw.product_id, raw.id);
   const title = firstString(raw.product_title, raw.title, raw.name);
   const productUrl = firstString(raw.product_url, raw.url, raw.link);
   if (!asin || !title || !productUrl) return null;
 
-  const price = firstString(raw.product_price, raw.price, raw.current_price, raw.buybox_price, raw.price_string, raw.deal_price) || "Price unavailable";
-  const description = firstString(raw.product_description, raw.description, raw.about_this_item, raw.feature_bullets) || "No description available.";
-  const rating = firstString(raw.product_star_rating, raw.rating, raw.stars) || "Not rated";
-  const reviewCount = firstString(raw.product_num_ratings, raw.review_count, raw.reviews_count, raw.total_reviews) || "No reviews yet";
-  const availability = firstString(raw.product_availability, raw.availability, raw.stock) || "Check availability on Amazon";
+  const offers = raw.offers && typeof raw.offers === "object" ? raw.offers as Record<string, unknown> : {};
+  const price = firstValue(raw.product_price, raw.price, raw.current_price, raw.buybox_price, raw.price_string, raw.deal_price, raw.price_amount, raw.list_price, offers.price) || "Price on Amazon";
+  const description = firstString(raw.product_description, raw.description, raw.about_this_item, raw.feature_bullets);
+  const rating = firstValue(raw.product_star_rating, raw.rating, raw.stars);
+  const reviewCount = firstValue(raw.product_num_ratings, raw.review_count, raw.reviews_count, raw.total_reviews);
+  const availability = firstString(raw.product_availability, raw.availability, raw.stock);
   const imageUrl = firstString(raw.product_photo, raw.image, raw.image_url, raw.thumbnail) || null;
   return { asin, title, price, description, rating, review_count: reviewCount, availability, image_url: imageUrl, product_url: productUrl, source: "amazon" };
 }
