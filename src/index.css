@@ -3,11 +3,205 @@
 @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
+/* ─── PREMIUM GRADIENT ANIMATIONS ─── */
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes gradientPulse {
+  0%, 100% { opacity: 0.6; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.1); }
+}
+
+@keyframes gradientRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes colorShift {
+  0% { background: linear-gradient(135deg, #ff4d8d, #ff79a8); }
+  50% { background: linear-gradient(135deg, #ff79a8, #ffc0d9); }
+  100% { background: linear-gradient(135deg, #ffc0d9, #ff4d8d); }
+}
+
+@keyframes meshGradient {
+  0%, 100% { background-position: 0% 0%, 100% 0%, 50% 100%, 50% 50%; }
+  25% { background-position: 20% 20%, 80% 20%, 70% 80%, 30% 50%; }
+  50% { background-position: 100% 100%, 0% 100%, 50% 0%, 50% 50%; }
+  75% { background-position: 50% 80%, 50% 20%, 30% 20%, 70% 50%; }
+}
+
+@keyframes slideRight {
+  to { width: 100%; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 77, 141, 0.4)); }
+  50% { filter: drop-shadow(0 0 16px rgba(255, 77, 141, 0.8)); }
+}
+
+@keyframes shimmerGradient {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+/* Gradient classes */
+.gradient-shift {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease-in-out infinite;
+}
+
+.gradient-pulse {
+  animation: gradientPulse 3s ease-in-out infinite;
+}
+
+.gradient-rotate {
+  animation: gradientRotate 12s linear infinite;
+}
+
+.color-shift-text {
+  background: linear-gradient(90deg, #c2195b, #ff4d8d, #ff79a8, #c2195b);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientShift 6s linear infinite;
+}
+
+.gradient-mesh-bg {
+  background: 
+    radial-gradient(at 20% 50%, rgba(255, 77, 141, 0.3) 0px, transparent 50px),
+    radial-gradient(at 60% 0%, rgba(255, 121, 168, 0.3) 0px, transparent 50px),
+    radial-gradient(at 60% 100%, rgba(255, 200, 220, 0.2) 0px, transparent 50px),
+    radial-gradient(at 0% 100%, rgba(230, 150, 180, 0.2) 0px, transparent 50px),
+    linear-gradient(135deg, rgba(247, 234, 240, 1) 0%, rgba(255, 240, 245, 1) 100%);
+  background-size: 200% 200%;
+  animation: meshGradient 15s ease-in-out infinite;
+}
+
+.gradient-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 77, 141, 0.2);
+  box-shadow: 0 8px 32px rgba(255, 77, 141, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.gradient-glow {
+  text-shadow:
+    0 0 20px rgba(255, 77, 141, 0.6),
+    0 0 40px rgba(255, 121, 168, 0.4),
+    0 0 60px rgba(194, 25, 91, 0.2);
+}
+
+.gradient-section {
+  background: linear-gradient(135deg, #fff0f6, #ffe8f3, #fff5f8);
+  background-size: 300% 300%;
+  animation: gradientShift 12s ease-in-out infinite;
+}
+
+.gradient-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.gradient-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ff4d8d, #ff79a8);
+  animation: slideRight 0.6s ease-out forwards;
+}
+
+.glow-effect {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* Gradient-enhanced cards */
+.card-gradient {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 245, 248, 0.95));
+  border: 1px solid rgba(255, 77, 141, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 77, 141, 0.05), rgba(255, 200, 220, 0.02));
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+.card-gradient:hover::before {
+  opacity: 1;
+}
+
+/* Gradient button effects */
+.btn-gradient {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transform: translateX(-100%);
+  animation: shimmerGradient 2s infinite;
+}
+
+/* 3D gradient transforms */
+.gradient-3d {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.gradient-3d:hover {
+  transform: rotateX(5deg) rotateY(5deg) translateZ(20px);
+  box-shadow: 0 20px 40px rgba(194, 25, 91, 0.2);
+}
+
+/* Animated gradient borders */
+@keyframes borderGradient {
+  0% { border-image-source: linear-gradient(90deg, #ff4d8d, #ff79a8); }
+  50% { border-image-source: linear-gradient(90deg, #ff79a8, #ffc0d9); }
+  100% { border-image-source: linear-gradient(90deg, #ffc0d9, #ff4d8d); }
+}
+
+.animated-border {
+  border: 2px solid;
+  border-image-source: linear-gradient(90deg, #ff4d8d, #ff79a8);
+  animation: borderGradient 3s ease-in-out infinite;
+  border-image-slice: 1;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .gradient-shift,
+  .gradient-pulse,
+  .gradient-rotate,
+  .color-shift-text,
+  .gradient-mesh-bg,
+  .glow-effect,
+  .btn-gradient::before,
+  .gradient-section {
+    animation: none;
+  }
+}
+
 * { box-sizing: border-box; }
 
 body {
   font-family: 'Josefin Sans', system-ui, sans-serif;
-  background: #fff5f8;
+  background: #f7eaf0;
   color: #3d0a1e;
   margin: 0;
 }
@@ -69,6 +263,243 @@ button, input, textarea, select { font-family: 'Josefin Sans', system-ui, sans-s
 .float3{animation:floatY  5s   ease-in-out infinite 1s}
 .float4{animation:floatY2 3.8s ease-in-out infinite 1.5s}
 .float5{animation:floatY  4.2s ease-in-out infinite .8s}
+
+/* ─── PREMIUM APPLE-STYLE ANIMATIONS ─── */
+
+/* Smooth scroll behavior */
+html { scroll-behavior: smooth; scroll-padding-top: 60px; }
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* Fade in animations */
+@keyframes fadeInUp { from { opacity:0; transform:translateY(30px) } to { opacity:1; transform:translateY(0) } }
+@keyframes fadeInDown { from { opacity:0; transform:translateY(-30px) } to { opacity:1; transform:translateY(0) } }
+@keyframes fadeInLeft { from { opacity:0; transform:translateX(-30px) } to { opacity:1; transform:translateX(0) } }
+@keyframes fadeInRight { from { opacity:0; transform:translateX(30px) } to { opacity:1; transform:translateX(0) } }
+@keyframes scaleIn { from { opacity:0; transform:scale(0.95) } to { opacity:1; transform:scale(1) } }
+
+/* Premium entrance animations */
+.animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-fade-in-down { animation: fadeInDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-fade-in-left { animation: fadeInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-fade-in-right { animation: fadeInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* Stagger delays */
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-500 { animation-delay: 0.5s; }
+
+/* Hover elevation effects */
+@keyframes elevate { 0% { transform:translateY(0) } 50% { box-shadow:0 8px 16px rgba(194,25,91,0.15) } 100% { transform:translateY(-4px); box-shadow:0 12px 24px rgba(194,25,91,0.2) } }
+.hover-elevate:hover { animation: elevate 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* 3D perspective effects */
+@keyframes perspective3D { from { transform:perspective(1000px) rotateX(0) rotateY(0) } to { transform:perspective(1000px) rotateX(2deg) rotateY(-2deg) translateZ(10px) } }
+.animate-3d-hover:hover { animation: perspective3D 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* Scale animations */
+@keyframes scaleUp { from { transform:scale(1) } to { transform:scale(1.05) } }
+@keyframes scaleDown { from { transform:scale(1.05) } to { transform:scale(1) } }
+.animate-scale-105:hover { transform: scale(1.05); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Smooth transitions for interactive elements */
+@keyframes slideUp { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
+@keyframes slideDown { from { opacity:0; transform:translateY(-20px) } to { opacity:1; transform:translateY(0) } }
+
+/* Shimmer loading animation */
+@keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+.animate-shimmer { animation: shimmer 2s infinite; background-size: 1000px 100%; background-image: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%); }
+
+/* Pulse animations for attention */
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Bounce animations */
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.animate-bounce { animation: bounce 1s ease-in-out infinite; }
+
+/* Subtle blur-in effect */
+@keyframes blurIn { from { filter: blur(10px); opacity: 0; } to { filter: blur(0); opacity: 1; } }
+.animate-blur-in { animation: blurIn 0.8s ease-out; }
+
+/* Scroll-linked animation base */
+.scroll-animate { will-change: transform, opacity; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Parallax effect */
+.parallax-slow { transform-style: preserve-3d; }
+.parallax-slow { --parallax-speed: 0.5; }
+
+/* Smooth transition timing function (Apple style) */
+* { --apple-ease-out: cubic-bezier(0.16, 1, 0.3, 1); --apple-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1); --apple-gentle: cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+/* Page transitions */
+@keyframes pageEnter { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.page-enter { animation: pageEnter 0.6s var(--apple-ease-out) forwards; }
+
+/* Product card premium animations */
+.product-card, .card-pink, .wishlist-item, .top-pick-card { will-change: transform, box-shadow; }
+.product-card:hover, .card-pink:hover, .wishlist-item:hover, .top-pick-card:hover { box-shadow: 0 12px 28px rgba(194, 25, 91, 0.15) !important; }
+
+/* Button premium interactions */
+.pink-btn, .outline-action { will-change: transform, box-shadow; transition: all 0.3s var(--apple-ease-out); }
+.pink-btn:active, .outline-action:active { transform: scale(0.96); }
+
+/* Input focus states */
+input:focus, textarea:focus, select:focus { transition: border-color 0.2s, box-shadow 0.2s var(--apple-ease-out); }
+
+/* Smooth scrolling for navigation */
+.shelf-arrow, .product-row-controls { transition: opacity 0.2s, transform 0.2s var(--apple-ease-out); }
+.shelf-arrow:hover, .product-row-controls button:hover { transform: scale(1.1); }
+
+/* ─── ENHANCED COMPONENT ANIMATIONS ─── */
+
+/* Product Card Premium Animations */
+.product-card, .pick-card, .card-pink, .wishlist-item, .top-pick-card, .explore-product, .creator-card, .blog-card {
+  transition: all 0.4s var(--apple-ease-out);
+  will-change: transform, box-shadow, border-color;
+}
+
+.product-card:hover, .pick-card:hover, .card-pink:hover, 
+.wishlist-item:hover, .top-pick-card:hover, .explore-product:hover, 
+.creator-card:hover, .blog-card:hover {
+  box-shadow: 0 16px 32px rgba(194, 25, 91, 0.18) !important;
+  transform: translateY(-8px) !important;
+}
+
+/* Navigation Animations */
+.app-navigation { animation: slideDown 0.5s var(--apple-ease-out) forwards; }
+
+/* Button Hover Lift Effect */
+.pink-btn:hover { 
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(255, 77, 141, 0.4) !important;
+}
+
+/* Link Hover Animations */
+a { transition: color 0.3s var(--apple-ease-out), opacity 0.3s var(--apple-ease-out); }
+a:hover { opacity: 0.8; }
+
+/* Icon Animations */
+.svg-icon { transition: transform 0.3s var(--apple-ease-out), color 0.3s var(--apple-ease-out); }
+.shelf-arrow:hover .svg-icon { transform: scale(1.2) rotate(5deg); }
+
+/* Modal/Overlay Animations */
+@keyframes overlayFade { from { opacity: 0; backdrop-filter: blur(0px); } to { opacity: 1; backdrop-filter: blur(8px); } }
+@keyframes modalSlideUp { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.product-modal-backdrop { animation: overlayFade 0.3s var(--apple-ease-out) forwards; }
+.product-modal { animation: modalSlideUp 0.4s var(--apple-ease-out) forwards; }
+
+/* Badge and Icon Animations */
+.badge-box { transition: all 0.4s var(--apple-ease-out); }
+.badge-box:hover { transform: translateY(-6px) scale(1.02); }
+
+.icon-circle { transition: all 0.3s var(--apple-ease-out); }
+.icon-circle:hover { background: #ff4d8d; color: #fff; transform: scale(1.15) rotate(12deg); }
+
+/* Stagger animations for lists */
+@keyframes staggerFadeInUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.creator-grid > *, .explore-grid > *, .top-picks-grid > * {
+  animation: staggerFadeInUp 0.6s var(--apple-ease-out) both;
+}
+
+.creator-grid > :nth-child(1) { animation-delay: 0.05s; }
+.creator-grid > :nth-child(2) { animation-delay: 0.1s; }
+.creator-grid > :nth-child(3) { animation-delay: 0.15s; }
+.creator-grid > :nth-child(n+4) { animation-delay: 0.2s; }
+
+.explore-grid > :nth-child(1) { animation-delay: 0.05s; }
+.explore-grid > :nth-child(2) { animation-delay: 0.1s; }
+.explore-grid > :nth-child(3) { animation-delay: 0.15s; }
+.explore-grid > :nth-child(4) { animation-delay: 0.2s; }
+.explore-grid > :nth-child(5) { animation-delay: 0.25s; }
+.explore-grid > :nth-child(n+6) { animation-delay: 0.3s; }
+
+.top-picks-grid > :nth-child(1) { animation-delay: 0.05s; }
+.top-picks-grid > :nth-child(2) { animation-delay: 0.1s; }
+.top-picks-grid > :nth-child(3) { animation-delay: 0.15s; }
+.top-picks-grid > :nth-child(4) { animation-delay: 0.2s; }
+.top-picks-grid > :nth-child(n+5) { animation-delay: 0.25s; }
+
+/* Heart button premium animations */
+.heart-btn { transition: all 0.3s var(--apple-ease-out); }
+.heart-btn:hover { transform: scale(1.2) rotate(10deg); background: #ffb3d0; }
+.heart-btn.active { animation: heartPulse 0.5s ease-in-out; }
+
+@keyframes heartPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* Collection section animations */
+@keyframes progressFill { from { width: 0%; } to { width: 100%; } }
+.collection-progress span { animation: progressFill 0.8s var(--apple-ease-out) forwards; }
+
+/* Newsletter section animations */
+@keyframes envelopeFloat { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+.newsletter-envelope { animation: envelopeFloat 3s ease-in-out infinite; }
+
+/* Auth page animations */
+.auth-page { animation: pageEnter 0.7s var(--apple-ease-out) forwards; }
+.auth-art-copy { animation: fadeInLeft 0.8s var(--apple-ease-out) forwards; }
+.auth-panel { animation: fadeInRight 0.8s var(--apple-ease-out) forwards; }
+
+.auth-socials button { transition: all 0.3s var(--apple-ease-out); }
+.auth-socials button:hover { background: #fff; border-color: #ff4d8d; transform: translateY(-2px); }
+
+/* Input field animations */
+.password-field input { transition: all 0.3s var(--apple-ease-out); }
+.password-field input:focus { padding-right: 38px !important; }
+
+/* Form animations */
+.details-form input, .details-form textarea { transition: all 0.3s var(--apple-ease-out); }
+.details-form input:focus, .details-form textarea:focus { transform: scale(1.01); }
+
+/* Blog animations */
+.blog-feature { animation: slideUp 0.7s var(--apple-ease-out) forwards; }
+.blog-grid > :nth-child(1) { animation: slideUp 0.6s var(--apple-ease-out) 0.1s forwards; }
+.blog-grid > :nth-child(2) { animation: slideUp 0.6s var(--apple-ease-out) 0.15s forwards; }
+.blog-grid > :nth-child(n+3) { animation: slideUp 0.6s var(--apple-ease-out) 0.2s forwards; }
+
+/* Wishlist animations */
+.wishlist-row > * { animation: scaleIn 0.6s var(--apple-ease-out) both; }
+.wishlist-row > :nth-child(1) { animation-delay: 0.1s; }
+.wishlist-row > :nth-child(2) { animation-delay: 0.15s; }
+.wishlist-row > :nth-child(3) { animation-delay: 0.2s; }
+
+/* Checkout animations */
+@keyframes checkoutSlide { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+.checkout-form { animation: checkoutSlide 0.5s var(--apple-ease-out) forwards; }
+
+/* Profile animations */
+.profile-section { animation: fadeInUp 0.6s var(--apple-ease-out) both; }
+.profile-section:nth-child(1) { animation-delay: 0.1s; }
+.profile-section:nth-child(2) { animation-delay: 0.15s; }
+.profile-section:nth-child(n+3) { animation-delay: 0.2s; }
+
+/* Toast animations */
+@keyframes toastInAdvanced { 
+  from { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.95);
+  } 
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1);
+  } 
+}
+
+.site-toast { animation: toastInAdvanced 0.3s var(--apple-ease-out) forwards; }
+
+/* Smart picks animations */
+.smart-picks { animation: slideDown 0.6s var(--apple-ease-out) forwards; }
 
 .pink-btn {
   background: #FF4D8D;
@@ -217,7 +648,7 @@ button, input, textarea, select { font-family: 'Josefin Sans', system-ui, sans-s
 @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Homepage finish: a blush-led product boutique palette. */
-body { background: #fff0f6; }
+body { background: #f7eaf0; }
 .nav-link, .nav-actions button:first-child { color: #7d3155 !important; }
 .nav-link:hover { color: #e73573 !important; }
 .hero-inner h1, .gifts-section h2, .gifts-section h2 + div, .gifts-section .product-card, .gifts-section .product-card div, .why-grid + *, .newsletter-box h3, .footer-grid > div > div { color: #5a1735 !important; }
@@ -1068,6 +1499,214 @@ footer .footer-bottom { border-color: #ffc8dd !important; }
 .amazon-pick-details h3, .amazon-pick-details strong { color:#3d0a1e; }
 .amazon-picks-notice { color:#c2195b; }
 
+/* ─── NEUMORPHISM THEME ─── */
+.neuro-elevated {
+  box-shadow: 0 2px 8px rgba(32, 37, 31, 0.08), 0 8px 16px rgba(32, 37, 31, 0.04);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.neuro-elevated:hover {
+  box-shadow: 0 4px 12px rgba(32, 37, 31, 0.12), 0 12px 24px rgba(32, 37, 31, 0.08);
+  transform: translateY(-2px);
+}
+
+.product-card.neuro-card,
+.pick-card.neuro-card,
+.explore-product.neuro-card {
+  background: linear-gradient(135deg, #FFFDF8 0%, #F4F0E8 100%);
+  border: 1px solid rgba(32, 37, 31, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(32, 37, 31, 0.12), 0 12px 24px rgba(32, 37, 31, 0.08), inset -1px -1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-card.neuro-card:hover,
+.pick-card.neuro-card:hover,
+.explore-product.neuro-card:hover {
+  box-shadow: 0 4px 12px rgba(32, 37, 31, 0.12), 0 12px 24px rgba(32, 37, 31, 0.08), 0 0 24px rgba(217, 93, 57, 0.15);
+  transform: translateY(-4px);
+  background: linear-gradient(135deg, #FFFDF8 0%, #F9F6F0 100%);
+}
+
+/* ─── GLASSMORPHISM THEME ─── */
+.glass-soft {
+  background: rgba(244, 240, 232, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(32, 37, 31, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.glass {
+  background: rgba(244, 240, 232, 0.5);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.product-card.glass-card,
+.pick-card.glass-card,
+.explore-product.glass-card {
+  background: rgba(244, 240, 232, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(32, 37, 31, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-card.glass-card:hover,
+.pick-card.glass-card:hover,
+.explore-product.glass-card:hover {
+  background: rgba(244, 240, 232, 0.65);
+  box-shadow: 0 4px 16px rgba(32, 37, 31, 0.1), 0 0 24px rgba(217, 93, 57, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: translateY(-4px);
+  backdrop-filter: blur(20px);
+}
+
+/* ─── UNICORN 3D THEME ─── */
+@keyframes iridescentShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes unicornFloat {
+  0%, 100% { transform: translateY(0px) rotateZ(0deg); }
+  25% { transform: translateY(-8px) rotateZ(1deg); }
+  75% { transform: translateY(-8px) rotateZ(-1deg); }
+}
+
+@keyframes unicornGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 105, 180, 0.4),
+                0 0 40px rgba(177, 156, 217, 0.3),
+                0 0 60px rgba(64, 224, 208, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 105, 180, 0.6),
+                0 0 60px rgba(177, 156, 217, 0.4),
+                0 0 90px rgba(64, 224, 208, 0.3);
+  }
+}
+
+@keyframes unicornRotate {
+  0% { transform: rotateX(0deg) rotateY(0deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg); }
+}
+
+.unicorn-text {
+  background: linear-gradient(90deg, #FF69B4, #B19CD9, #40E0D0, #FF7F50, #FF69B4);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: iridescentShift 6s ease infinite;
+  font-weight: 700;
+  filter: drop-shadow(0 2px 4px rgba(255, 105, 180, 0.4));
+}
+
+.product-card.unicorn,
+.pick-card.unicorn,
+.explore-product.unicorn {
+  background: linear-gradient(135deg, rgba(255, 253, 248, 0.8), rgba(244, 240, 232, 0.8));
+  border: 1px solid rgba(255, 105, 180, 0.2);
+  border-radius: 16px;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  transform-style: preserve-3d;
+  perspective: 1200px;
+  box-shadow: 0 0 20px rgba(255, 105, 180, 0.15), 0 2px 8px rgba(32, 37, 31, 0.08);
+}
+
+.product-card.unicorn:hover,
+.pick-card.unicorn:hover,
+.explore-product.unicorn:hover {
+  transform: translateY(-12px) rotateX(12deg) rotateY(4deg);
+  box-shadow: 0 0 60px rgba(255, 105, 180, 0.5),
+              0 0 100px rgba(177, 156, 217, 0.35),
+              0 0 140px rgba(64, 224, 208, 0.2),
+              0 16px 40px rgba(32, 37, 31, 0.25);
+  border-color: rgba(177, 156, 217, 0.6);
+  background: linear-gradient(135deg, rgba(255, 253, 248, 0.98), rgba(244, 240, 232, 0.95));
+}
+
+.unicorn-float { animation: unicornFloat 4s ease-in-out infinite; }
+.unicorn-glow { animation: unicornGlow 3s ease-in-out infinite; }
+.unicorn-spin { animation: unicornRotate 8s linear infinite; }
+
+.unicorn-btn {
+  background: linear-gradient(135deg, #FF69B4, #B19CD9, #40E0D0);
+  background-size: 300% 300%;
+  color: white;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(255, 105, 180, 0.3), 0 4px 12px rgba(177, 156, 217, 0.2);
+  transition: all 0.3s ease;
+  animation: iridescentShift 6s ease infinite;
+}
+
+.unicorn-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 0 30px rgba(255, 105, 180, 0.5), 0 0 60px rgba(177, 156, 217, 0.3), 0 8px 20px rgba(32, 37, 31, 0.15);
+}
+
+.unicorn-section {
+  background: linear-gradient(135deg,
+    rgba(255, 105, 180, 0.15) 0%,
+    rgba(177, 156, 217, 0.12) 50%,
+    rgba(64, 224, 208, 0.12) 100%
+  );
+  border: 2px solid rgba(255, 105, 180, 0.4);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 0 40px rgba(255, 105, 180, 0.25), 0 0 80px rgba(177, 156, 217, 0.15), 0 8px 32px rgba(32, 37, 31, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.unicorn-badge {
+  background: linear-gradient(90deg, rgba(255, 105, 180, 0.2), rgba(177, 156, 217, 0.2), rgba(64, 224, 208, 0.2));
+  border: 1px solid rgba(255, 105, 180, 0.3);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #20251F;
+  display: inline-block;
+  box-shadow: 0 0 12px rgba(255, 105, 180, 0.2);
+  background-size: 200% 200%;
+  animation: iridescentShift 8s ease infinite;
+}
+
+.unicorn-heading {
+  background: linear-gradient(90deg, #FF69B4, #B19CD9, #40E0D0, #FF7F50);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: iridescentShift 8s ease infinite;
+  filter: drop-shadow(0 0 8px rgba(255, 105, 180, 0.3));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unicorn-text, .unicorn-float, .unicorn-glow, .unicorn-spin, .unicorn-btn, .unicorn-badge, .unicorn-heading,
+  .product-card.unicorn, .pick-card.unicorn, .explore-product.unicorn {
+    animation: none;
+    transform: none;
+    transition: none;
+  }
+  .product-card.unicorn:hover, .pick-card.unicorn:hover, .explore-product.unicorn:hover {
+    transform: translateY(-4px);
+  }
+}
+
 /* Search results stay aligned so product differences come from the images, not the layout. */
 .amazon-picks-grid { align-items:stretch; }
 @media (max-width:700px) {
@@ -1225,6 +1864,21 @@ footer .footer-bottom { border-color: #ffc8dd !important; }
 @media (prefers-reduced-motion:reduce) {
   .amazon-picks-grid .amazon-pick-image img { animation:none; }
   .amazon-picks-notice { animation:none; }
+
+/* Keep creator wishlist cards visually identical to Explore product cards. */
+.profile-page { background:#f7eaf0; }
+.profile-page .wishlist-row { display:grid; grid-template-columns:none !important; grid-template-rows:1fr !important; grid-auto-flow:column !important; grid-auto-columns:minmax(205px, 1fr) !important; max-height:none !important; gap:14px; padding:8px 4px 18px; overflow-x:auto; overflow-y:visible !important; align-items:stretch; }
+.profile-page .wishlist-item { display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; padding:0; border:1px solid transparent; border-radius:20px; background:#f7eaf0; box-shadow:8px 8px 18px rgba(91,45,67,.12), -8px -8px 18px rgba(255,255,255,.9); transition:transform .2s, box-shadow .2s; }
+.profile-page .wishlist-item:hover { transform:translateY(-4px); border-color:transparent; box-shadow:11px 11px 24px rgba(91,45,67,.16), -9px -9px 20px rgba(255,255,255,.95); }
+.profile-page .wishlist-art { position:relative; height:185px; margin:8px 8px 0; overflow:hidden; border-radius:65px; background:#f7eaf0; box-shadow:inset 5px 5px 11px rgba(91,45,67,.08), inset -5px -5px 11px rgba(255,255,255,.95); }
+.profile-page .wishlist-art img { display:block; width:100%; height:100%; padding:13px; object-fit:contain; mix-blend-mode:multiply; }
+.profile-page .wishlist-item > div:last-child { display:grid; align-content:start; gap:6px; min-height:0; flex:1; padding:12px 13px 14px; }
+.profile-page .wishlist-item h3 { display:-webkit-box; height:34px; min-height:34px; max-height:34px; margin:5px 0 11px; overflow:hidden; color:#6e1b40; font-size:13px; line-height:1.3; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+.profile-page .wishlist-item .product-brand { color:#d47fa0; font-size:9px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
+.profile-page .wishlist-item > div:last-child > strong, .profile-page .wishlist-item > div:last-child > span:not(.product-brand) { color:#c2195b; font-size:16px; font-weight:900; }
+.profile-page .wishlist-item .wishlist-link { justify-self:start; margin:0; padding:7px 10px; border:0; border-radius:999px; color:#fff !important; background:#ff4d8d; font:800 10px Nunito,sans-serif; }
+.profile-page .wishlist-item .wishlist-link:hover { background:#c2195b; }
+@media (max-width:600px) { .profile-page .wishlist-row { grid-auto-columns:185px; gap:10px; }.profile-page .wishlist-art { height:130px; }.profile-page .wishlist-item > div:last-child { padding:9px 10px 11px; }.profile-page .wishlist-item h3 { font-size:11px; } }
 }
 
 /* Keep the catalog easy to scan on touch screens: use a responsive grid, not a hidden rail. */

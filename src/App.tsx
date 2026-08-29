@@ -7,6 +7,7 @@ import productThree from "@/imports/p3.jpg.jpg";
 import productFour from "@/imports/p4.jpg";
 import productFive from "@/imports/p5.jpg";
 import { hasSupabaseConfig, supabase } from "@/lib/supabase";
+import { ParticleBackground } from "@/components/ParticleBackground";
 
 const GIFTS = [
   { id:1, name:"Sony WH-1000XM5",       brand:"Sony",        category:"Tech",        price:"$349", img:productOne },
@@ -652,13 +653,13 @@ function ProfilePage({ view, creatorId, onBack, onOpen, onExploreGifts, onExplor
                 <div className="profile-section-heading"><div><span className="section-label">A little something</span><h2>{isOwner ? "My wishlist" : `${details?.name || "Creator"}'s wishlist`}</h2></div></div>
                 {amazonResults.length > 0 && <div className="amazon-results" aria-label="Amazon search results">{amazonResults.map(product => <article className="amazon-result" key={product.asin} onClick={() => setSelectedProduct(product)}>{product.image_url ? <img src={product.image_url} alt="" /> : <div className="amazon-result-placeholder"><SvgIcon name="gift" size={20} /></div>}<div><strong>{product.title}</strong><span>{product.price}</span></div><button className="outline-action" onClick={event => { event.stopPropagation(); void addAmazonResult(product); }}>Add</button></article>)}</div>}
                 {canEdit && showWishlistForm && <form className="inline-form" onSubmit={addWishlistItem}><input value={wishlistForm.name} onChange={event => setWishlistForm({ ...wishlistForm, name: event.target.value })} placeholder="Gift name" required /><input type="number" min="0" step="0.01" value={wishlistForm.price} onChange={event => setWishlistForm({ ...wishlistForm, price: event.target.value })} placeholder="Price" required /><input value={wishlistForm.item_url} onChange={event => setWishlistForm({ ...wishlistForm, item_url: event.target.value })} placeholder="Amazon/product URL (optional)" type="url" /><input value={wishlistForm.image_url} onChange={event => setWishlistForm({ ...wishlistForm, image_url: event.target.value })} placeholder="Image URL (optional)" type="url" /><button className="pink-btn" type="submit">Add to wishlist</button></form>}
-                {wishlist.length ? <div className="product-row-shell"><div className="wishlist-row">{wishlist.map(item => <article className="wishlist-item" key={item.id} onClick={() => setSelectedProduct(item)}><div className="wishlist-art">{item.image_url ? <img src={item.image_url} alt="" /> : <SvgIcon name="gift" size={33} />}</div><div><span className="product-brand">Wishlist pick</span><h3>{item.name}</h3><strong>{item.price ? `$${Number(item.price).toFixed(2)}` : "Price on Amazon"}</strong><button className="wishlist-link" onClick={event => { event.stopPropagation(); if (item.item_url) window.open(item.item_url, "_blank", "noopener,noreferrer"); }}>{isCreator ? "View item" : "Buy on Amazon"} <span>↗</span></button></div></article>)}</div><ProductRowControls target=".wishlist-section .wishlist-row" /></div> : <div className="profile-empty-state">No wishlist items yet. Add your first item from creator settings.</div>}
+                {wishlist.length ? <div className="product-row-shell"><div className="wishlist-row">{wishlist.map(item => <article className="wishlist-item" key={item.id} onClick={() => setSelectedProduct(item)}><div className="wishlist-art">{item.image_url ? <img src={item.image_url} alt="" onError={event => { event.currentTarget.onerror = null; event.currentTarget.src = productOne; }} /> : <SvgIcon name="gift" size={33} />}</div><div><span className="product-brand">Wishlist pick</span><h3>{item.name}</h3><strong>{item.price ? `$${Number(item.price).toFixed(2)}` : "Price on Amazon"}</strong><button className="wishlist-link" onClick={event => { event.stopPropagation(); if (item.item_url) window.open(item.item_url, "_blank", "noopener,noreferrer"); }}>{isCreator ? "View item" : "Buy on Amazon"} <span>↗</span></button></div></article>)}</div><ProductRowControls target=".wishlist-section .wishlist-row" /></div> : <div className="profile-empty-state">No wishlist items yet. Add your first item from creator settings.</div>}
               </section>
             ) : (
               <section className="profile-section activity-section">
                 <div className="profile-section-heading"><div><span className="section-label">Your little acts of kindness</span><h2>Gift activity</h2></div></div>
                 {gifts.length ? gifts.map(item => <div className="activity-row" key={item.id}><div className="activity-icon"><SvgIcon name="gift" size={20} /></div><div><strong>{item.gift_name}</strong><span>Sent to {item.creator?.display_name || "a creator"}</span></div><time>{new Date(item.sent_at).toLocaleDateString()}</time></div>) : <div className="profile-empty-state">No gifts sent yet. Your gift history will appear here.</div>}
-                {creatorWishlist.length > 0 && <div className="supporter-wishlist"><div className="profile-section-heading"><div><span className="section-label">Choose a thoughtful gift</span><h2>{creatorName}'s wishlist</h2></div></div><div className="wishlist-row">{creatorWishlist.map(item => <article className="wishlist-item" key={item.id} onClick={() => setSelectedProduct(item)}><div className="wishlist-art">{item.image_url ? <img src={item.image_url} alt="" /> : <SvgIcon name="gift" size={33} />}</div><div><h3>{item.name}</h3><span>{item.price ? `$${Number(item.price).toFixed(2)}` : "Price on Amazon"}</span><button className="wishlist-link" onClick={event => { event.stopPropagation(); if (item.item_url) window.open(item.item_url, "_blank", "noopener,noreferrer"); }}>Buy on Amazon <span>↗</span></button></div></article>)}</div></div>}
+                {creatorWishlist.length > 0 && <div className="supporter-wishlist"><div className="profile-section-heading"><div><span className="section-label">Choose a thoughtful gift</span><h2>{creatorName}'s wishlist</h2></div></div><div className="wishlist-row">{creatorWishlist.map(item => <article className="wishlist-item" key={item.id} onClick={() => setSelectedProduct(item)}><div className="wishlist-art">{item.image_url ? <img src={item.image_url} alt="" onError={event => { event.currentTarget.onerror = null; event.currentTarget.src = productOne; }} /> : <SvgIcon name="gift" size={33} />}</div><div><h3>{item.name}</h3><span>{item.price ? `$${Number(item.price).toFixed(2)}` : "Price on Amazon"}</span><button className="wishlist-link" onClick={event => { event.stopPropagation(); if (item.item_url) window.open(item.item_url, "_blank", "noopener,noreferrer"); }}>Buy on Amazon <span>↗</span></button></div></article>)}</div></div>}
               </section>
             )}
 
@@ -876,7 +877,9 @@ export default function App() {
     return <>{appNavigation}<CreatorDirectoryPage onBack={() => navigateUtility(null)} onView={openCreator} />{browserControls}</>;
   }
   return (
-    <div style={{ fontFamily:"'Josefin Sans',sans-serif", background:C.bg, color:C.text, minHeight:"100vh" }}>
+    <div style={{ fontFamily:"'Josefin Sans',sans-serif", background:C.bg, color:C.text, minHeight:"100vh", position:"relative" }}>
+      <ParticleBackground />
+      <div style={{ position: "relative", zIndex: 1 }}>
       {browserControls}
 
       {/* ══ NAVBAR ══ */}
@@ -920,7 +923,7 @@ export default function App() {
       </nav>
 
       {/* ══ HERO ══ */}
-      <section className="hero-section" style={{
+      <section className="hero-section unicorn-section" style={{
         position:"relative", overflow:"hidden", minHeight:432,
         display:"flex", alignItems:"center",
       }}>
@@ -951,7 +954,7 @@ export default function App() {
               border:"1px solid rgba(255,140,175,0.4)",
             }}><SvgIcon name="heart" size={12} filled /> For creators. By fans.</div>
 
-            <h1 style={{ fontWeight:900, fontSize:"clamp(2.1rem,4.5vw,3.4rem)", lineHeight:1.08, letterSpacing:"-0.03em", color:"#101010", margin:0, textShadow:"none" }}>
+            <h1 style={{ fontWeight:900, fontSize:"clamp(2.1rem,4.5vw,3.4rem)", lineHeight:1.08, letterSpacing:"-0.03em", color:"#101010", margin:0, textShadow:"none" }} className="color-shift-text unicorn-text">
               Support creators.<br/>
               Send more than<br/>
               <em style={{ fontStyle:"italic", color:C.pink, fontWeight:900 }}>just a gift.</em>
@@ -962,7 +965,7 @@ export default function App() {
             </p>
 
             <div style={{ marginTop:28, display:"flex", gap:12, flexWrap:"wrap", alignItems:"center" }}>
-              <button onClick={() => setAuthMode("signup")} className="pink-btn" style={{ padding:"13px 30px", fontSize:14, boxShadow:"0 6px 24px rgba(255,77,141,.35)" }}>
+              <button onClick={() => setAuthMode("signup")} className="pink-btn btn-gradient unicorn-btn" style={{ padding:"13px 30px", fontSize:14, boxShadow:"0 0 20px rgba(255, 105, 180, 0.3), 0 6px 24px rgba(255,77,141,.35)" }}>
                 Join BakaBoost →
               </button>
             </div>
@@ -990,7 +993,7 @@ export default function App() {
       </section>
 
       {/* ══ FEATURE ICONS ROW ══ */}
-      <section className="feature-section" style={{ background:C.bg, padding:"18px 24px 28px" }}>
+      <section className="feature-section gradient-section unicorn-section glass-soft" style={{ background:C.bg, padding:"18px 24px 28px", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)" }}>
         <div className="feature-grid" style={{ maxWidth:1200, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:0, background:"rgba(255,255,255,.72)", border:`1.5px solid ${C.border}`, borderRadius:18, overflow:"hidden", boxShadow:"0 3px 18px rgba(255,77,141,.06)" }}>
           {[
             { icon:"mask", title:"Remain Anonymous",     desc:"Support your favorite creators without revealing your identity." },
@@ -1008,7 +1011,7 @@ export default function App() {
       </section>
 
       {/* ══ POPULAR GIFTS ══ */}
-      <section className="gifts-section" style={{ background:"#ffffff", padding:"34px 24px 48px" }}>
+      <section className="gifts-section glass-section" style={{ background:"rgba(255, 255, 255, 0.7)", padding:"34px 24px 48px", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)" }}>
         <div style={{ maxWidth:1200, margin:"0 auto" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:22 }}>
             <div>
@@ -1020,10 +1023,10 @@ export default function App() {
             <a className="explore-gifts" href="#explore" onClick={(event) => { event.preventDefault(); navigateUtility("explore"); }} style={{ fontSize:12, fontWeight:800, color:C.pink, textDecoration:"none", border:`1px solid ${C.border}`, borderRadius:999, padding:"8px 14px" }}>Explore all gifts →</a>
           </div>
 
-          <div className="gift-grid" style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14 }}>
+          <div className="gift-grid unicorn-grid" style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14 }}>
             {GIFTS.filter(g => `${g.name} ${g.brand}`.toLowerCase().includes(searchQuery.toLowerCase())).map(g=>(
-              <div key={g.id} className="product-card">
-                <div style={{ position:"relative", background:"#fff" }}>
+              <div key={g.id} className="product-card card-gradient neuro-card glass-card unicorn">
+                <div style={{ position:"relative", background:"rgba(255,255,255,0.3)", borderTopLeftRadius:"16px", borderTopRightRadius:"16px" }}>
                   <img src={g.img} alt={g.name} className="img-pink"/>
                   <button
                     className={`heart-btn${liked.has(g.id)?" active":""}`}
@@ -1033,7 +1036,7 @@ export default function App() {
                     <SvgIcon name="heart" size={14} filled={liked.has(g.id)} />
                   </button>
                 </div>
-                <div style={{ padding:"12px 14px 14px" }}>
+                <div style={{ padding:"12px 14px 14px", background:"rgba(255,255,255,0.4)", backdropFilter:"blur(8px)", borderBottomLeftRadius:"16px", borderBottomRightRadius:"16px" }}>
                   <div style={{ fontSize:10, fontWeight:700, color:"#777", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:3 }}>{g.brand}</div>
                   <div style={{ fontSize:13, fontWeight:800, color:"#222", marginBottom:10, lineHeight:1.35 }}>{g.name}</div>
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -1207,6 +1210,7 @@ export default function App() {
 
       {notice && <div className="site-toast" role="status"><SvgIcon name="check" size={15} /> {notice}</div>}
 
+      </div>
     </div>
   );
 }
